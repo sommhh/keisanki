@@ -2,321 +2,412 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>音声電卓 v8</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>音声電卓 v11 - 常時待機</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box}
-  body{
-    margin:0; background:#0a0a0a; color:#e5e5e5; font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Yu Gothic",sans-serif;
-    display:flex; justify-content:center; align-items:flex-start; min-height:100vh; padding:20px;
+  body { font-family: 'Noto Sans JP', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .glass { backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+  .pulse-red { animation: pulse-red 1.8s infinite; }
+  @keyframes pulse-red {
+    0% { box-shadow: 0 0 rgba(239,68,68,0.7), 0 0 rgba(239,68,68,0.4); }
+    70% { box-shadow: 0 0 0 14px rgba(239,68,68,0), 0 0 0 28px rgba(239,68,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0), 0 0 0 0 rgba(239,68,68,0); }
   }
-  .calc{
-    background:#171717; width:100%; max-width:340px; border-radius:24px; padding:20px;
-    box-shadow:0 20px 50px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05); border:1px solid #262626;
-  }
-  h1{ margin:0 0 10px; text-align:center; font-size:18px; font-weight:600; color:#a3a3a3; letter-spacing:.05em }
-  .modes{ display:flex; gap:8px; justify-content:center; margin-bottom:10px }
-  .mode{
-    padding:6px 14px; border-radius:20px; background:#212121; border:1px solid #333; color:#888;
-    font-size:12px; cursor:pointer; transition:.2s;
-  }
-  .mode.active{ background:#3b82f6; border-color:#3b82f6; color:#fff; font-weight:600 }
-  .toggle-wrap{ text-align:center; margin:4px 0 8px }
-  #history{ font-size:12px; color:#71717a; text-align:left; margin:8px 4px; min-height:40px; line-height:1.5; font-variant-numeric:tabular-nums }
-  #history div{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.9 }
-  .display{
-    background:#0a0a0a; border-radius:16px; padding:14px 16px; text-align:right; margin:10px 0;
-    border:1px solid #262626; min-height:78px; display:flex; flex-direction:column; justify-content:center;
-  }
-  #expr{ font-size:14px; color:#52525b; min-height:20px; word-break:break-all }
-  #current{ font-size:36px; font-weight:200; letter-spacing:.02em; line-height:1.1 }
-  #mic{
-    width:72px; height:72px; border-radius:50%; background:#212121; border:2px solid #404040;
-    font-size:30px; display:block; margin:14px auto 8px; cursor:pointer; transition:.2s; color:#e5e5e5;
-    box-shadow:0 4px 12px rgba(0,0,0,.4);
-  }
-  #mic:active{ transform:scale(.96) }
-  #mic.listening{ background:#ef4444; border-color:#fca5a5; animation:pulse 1.4s infinite; color:white }
-  @keyframes pulse{ 0%,100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(239,68,68,.5)} 50%{ transform:scale(1.05); box-shadow:0 0 0 12px rgba(239,68,68,0)}}
-  #status{ text-align:center; font-size:12px; color:#737373; min-height:18px; margin-bottom:4px }
-  .keys{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px }
-  .key{
-    background:#212121; border:1px solid #2a2a2a; border-radius:14px; color:#e5e5e5;
-    font-size:22px; padding:16px 0; cursor:pointer; transition:.1s; font-weight:400;
-    touch-action:manipulation;
-  }
-  .key:active{ transform:scale(.94); background:#2a2a2a }
-  .key.op{ background:#262626; color:#f59e0b; font-size:24px }
-  .key.eq{ background:#3b82f6; border-color:#3b82f6; color:white; grid-row:span 2; font-size:26px }
-  .help{ margin-top:14px; font-size:11px; color:#52525b; text-align:center; line-height:1.4 }
+  .btn-press:active { transform: scale(0.94); }
+  * { scrollbar-width: thin; scrollbar-color: #475569 transparent; }
 </style>
 </head>
-<body>
-<div class="calc">
-  <h1>音声電卓 v8</h1>
-  
-  <div class="modes">
-    <button id="btn-oneshot" class="mode active">ワンショット</button>
-    <button id="btn-continuous" class="mode">連続</button>
+<body class="min-h-screen bg-[#020617] text-white flex items-center justify-center p-3 selection:bg-violet-500/30">
+<div class="absolute inset-0 overflow-hidden">
+  <div class="absolute -top-40 -right-40 w-96 h-96 bg-violet-600/30 rounded-full blur-[120px]"></div>
+  <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-600/30 rounded-full blur-[120px]"></div>
+</div>
+
+<div class="relative w-full max-w-[420px]">
+  <div class="glass bg-white/[0.06] border border-white/15 rounded-[2.5rem] shadow-[0_25px_80px_-15px_rgba(0,0,0,0.6)] p-6 sm:p-8">
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-5">
+      <div>
+        <h1 class="text-[26px] font-bold tracking-tight leading-none">音声電卓</h1>
+        <p class="text-[12px] text-white/50 mt-1.5 font-medium">v11 常時待機モード</p>
+      </div>
+      <button id="micBtn" aria-label="マイク" class="relative w-[60px] h-[60px] rounded-full bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-center transition-all duration-300 group btn-press">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="relative z-10">
+          <path d="M12 1.5a3.5 3.5 0 0 0-3.5 3.5v6a3.5 3.5 0 0 0 7 0v-6A3.5 0 0 0 12 1.5Z"/>
+          <path d="M19 10.5v1a7 7 0 0 1-14 0v-1M12 17.5v4M8.5 21.5h7" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Status -->
+    <div class="flex items-center gap-2.5 mb-4">
+      <div id="statusDot" class="w-2.5 h-2.5 rounded-full bg-white/25 transition-all duration-500"></div>
+      <p id="statusText" class="text-[13px] text-white/65">待機中 - マイクをタップ</p>
+      <span id="listenBadge" class="ml-auto hidden items-center gap-1 text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
+        <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>LIVE
+      </span>
+    </div>
+
+    <!-- Mode -->
+    <div class="grid grid-cols-2 gap-1.5 p-1 bg-black/40 rounded-2xl border border-white/10 mb-4">
+      <button id="modeOneshot" class="mode-btn py-2.5 rounded-xl text-[13px] font-semibold transition-all">ワンショット</button>
+      <button id="modeContinuous" class="mode-btn py-2.5 rounded-xl text-[13px] font-semibold transition-all text-white/60">連続</button>
+    </div>
+
+    <!-- Display -->
+    <div class="relative bg-gradient-to-b from-black/60 to-black/30 rounded-[1.8rem] p-5 mb-4 border border-white/10 overflow-hidden">
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(139,92,246,0.15),transparent_60%)] pointer-events-none"></div>
+      <div id="voiceTranscript" class="relative text-[12px] text-violet-300 h-[18px] mb-1.5 truncate font-medium"></div>
+      <div id="expression" class="relative mono text-right text-[22px] leading-tight text-white/70 min-h-[28px] break-all tracking-wide">0</div>
+      <div id="result" class="relative mono text-right text-[42px] sm:text-[48px] font-semibold leading-none tracking-tight min-h-[52px]">0</div>
+    </div>
+
+    <!-- Keypad -->
+    <div class="grid grid-cols-4 gap-2.5">
+      <button data-k="C" class="key h-[52px] rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-[15px] font-medium text-white/80 btn-press transition">AC</button>
+      <button data-k="(" class="key h-[52px] rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-[18px] btn-press">(</button>
+      <button data-k=")" class="key h-[52px] rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-[18px] btn-press">)</button>
+      <button data-k="/" class="key h-[52px] rounded-2xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/20 text-[20px] btn-press">÷</button>
+      
+      <button data-k="7" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">7</button>
+      <button data-k="8" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">8</button>
+      <button data-k="9" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">9</button>
+      <button data-k="*" class="key h-[56px] rounded-2xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/20 text-[20px] btn-press">×</button>
+      
+      <button data-k="4" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">4</button>
+      <button data-k="5" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">5</button>
+      <button data-k="6" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">6</button>
+      <button data-k="-" class="key h-[56px] rounded-2xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/20 text-[24px] btn-press">−</button>
+      
+      <button data-k="1" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">1</button>
+      <button data-k="2" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">2</button>
+      <button data-k="3" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">3</button>
+      <button data-k="+" class="key h-[56px] rounded-2xl bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/20 text-[22px] btn-press">＋</button>
+      
+      <button data-k="0" class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium col-span-2 btn-press">0</button>
+      <button data-k="." class="key h-[56px] rounded-2xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 text-[22px] font-medium btn-press">.</button>
+      <button data-k="=" class="key h-[56px] rounded-2xl bg-gradient-to-b from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500 border border-violet-400/30 text-[26px] shadow-[0_8px_20px_-6px_rgba(99,102,241,0.5)] btn-press">=</button>
+    </div>
+
+    <!-- History -->
+    <div id="history" class="mt-4 max-h-[90px] overflow-y-auto space-y-1 pr-1"></div>
+
+    <p class="mt-3 text-[11px] leading-relaxed text-white/35">
+      例:「12たす8」「1000わる3」「50パーセント」 / 停止:「ストップ」「終了」「マイクオフ」
+    </p>
   </div>
-  
-  <div class="toggle-wrap">
-    <label style="font-size:12px;color:#a3a3a3"><input type="checkbox" id="speakToggle" checked> 読み上げ</label>
-  </div>
-  
-  <div id="history" style="font-size:12px;color:#888;text-align:left;margin:8px;min-height:40px"></div>
-  
-  <div class="display">
-    <div id="expr"></div>
-    <div id="current">0</div>
-  </div>
-  
-  <button id="mic" aria-label="マイク">🎤</button>
-  <div id="status">マイク停止中</div>
-  
-  <div class="keys">
-    <button class="key" onclick="clearBtn()">C</button>
-    <button class="key" onclick="back()">⌫</button>
-    <button class="key op" onclick="op('/')">÷</button>
-    <button class="key op" onclick="op('*')">×</button>
-    
-    <button class="key" onclick="input('7')">7</button>
-    <button class="key" onclick="input('8')">8</button>
-    <button class="key" onclick="input('9')">9</button>
-    <button class="key op" onclick="op('-')">−</button>
-    
-    <button class="key" onclick="input('4')">4</button>
-    <button class="key" onclick="input('5')">5</button>
-    <button class="key" onclick="input('6')">6</button>
-    <button class="key op" onclick="op('+')">+</button>
-    
-    <button class="key" onclick="input('1')">1</button>
-    <button class="key" onclick="input('2')">2</button>
-    <button class="key" onclick="input('3')">3</button>
-    <button class="key eq" onclick="calc()">＝</button>
-    
-    <button class="key" style="grid-column:span 2" onclick="input('0')">0</button>
-    <button class="key" onclick="input('.')">.</button>
-  </div>
-  
-  <div class="help">「いちたすに」「クリア」「次」など話しかけてください</div>
 </div>
 
 <script>
-let current="0", expr="", lastResult=null, mode='oneshot', micActive=false, listening=false, recognition=null, history=[];
+(() => {
+  const micBtn = document.getElementById('micBtn');
+  const statusText = document.getElementById('statusText');
+  const statusDot = document.getElementById('statusDot');
+  const listenBadge = document.getElementById('listenBadge');
+  const expressionEl = document.getElementById('expression');
+  const resultEl = document.getElementById('result');
+  const voiceTranscript = document.getElementById('voiceTranscript');
+  const historyEl = document.getElementById('history');
+  const modeOneshot = document.getElementById('modeOneshot');
+  const modeContinuous = document.getElementById('modeContinuous');
 
-const $ = id => document.getElementById(id);
+  let micActive = false;
+  let recognition = null;
+  let mode = 'oneshot';
+  let currentExpr = '0';
+  let lastResult = null;
+  let isSpeaking = false;
+  let jaVoice = null;
 
-function updateDisplay(){
-  $('expr').textContent = expr;
-  $('current').textContent = current;
-}
-function setStatus(s){ $('status').textContent = s }
-
-function safeEval(e){
-  if(!/^[0-9+\-*/().]+$/.test(e)) throw new Error('invalid');
-  return Function('"use strict";return ('+e+')')();
-}
-function percentFix(s){ return s }
-
-function addHistory(e,r){
-  history.unshift(`${e}=${r}`);
-  if(history.length>3) history.pop();
-  $('history').innerHTML = history.map(h=>`<div>${h}</div>`).join('')
-}
-
-function playSound(type){
-  try{
-    const ctx = window.audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    window.audioCtx = ctx;
-    if(ctx.state==='suspended') ctx.resume();
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    if(type==='click'){o.frequency.value=800; g.gain.setValueAtTime(0.08,ctx.currentTime)}
-    else if(type==='success'){o.frequency.value=1200; g.gain.setValueAtTime(0.12,ctx.currentTime)}
-    else if(type==='error'){o.frequency.value=280; g.gain.setValueAtTime(0.15,ctx.currentTime)}
-    else if(type==='clear'){o.frequency.value=600; g.gain.setValueAtTime(0.09,ctx.currentTime)}
-    o.type='sine';
-    o.start(); o.stop(ctx.currentTime+0.07);
-  }catch(e){}
-}
-
-function speak(text){
-  if(!$('speakToggle').checked) return;
-  try{
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang='ja-JP'; u.rate=1.0; u.pitch=1.0;
+  // Voice setup
+  function loadVoices() {
     const voices = speechSynthesis.getVoices();
-    let v = voices.find(v=>v.lang==='ja-JP' && /Kyoko|Haruka|Nanami|Mizuki|Sayaka|Tomoko|Female|女性/.test(v.name));
-    if(!v) v = voices.find(v=>v.lang==='ja-JP');
-    if(v) u.voice=v;
+    jaVoice = voices.find(v => v.lang === 'ja-JP' && /Kyoko|Haruka|Sayaka|女性|Female/i.test(v.name)) 
+           || voices.find(v => v.lang === 'ja-JP') 
+           || voices.find(v => v.lang.startsWith('ja'));
+  }
+  loadVoices();
+  if ('speechSynthesis' in window) {
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  function speak(text, keepListening = true) {
+    if (!('speechSynthesis' in window)) return;
+    isSpeaking = true;
+    if (micActive && recognition) { try { recognition.abort(); } catch(e){} }
     speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP';
+    u.rate = 1.0;
+    u.pitch = 1.18;
+    u.volume = 1;
+    if (jaVoice) u.voice = jaVoice;
+    u.onend = () => {
+      isSpeaking = false;
+      if (micActive && keepListening) {
+        setTimeout(() => { try { recognition && recognition.start(); } catch(e){} }, 250);
+      }
+    };
+    u.onerror = () => { isSpeaking = false; };
     speechSynthesis.speak(u);
-  }catch(e){}
-}
-function speakAnswer(result){ speak(`答えは ${result} です`) }
+  }
 
-function clearAll(soft=false){
-  current="0"; expr=""; lastResult=null;
-  updateDisplay();
-  setStatus(soft?'次の計算どうぞ':'クリアしました');
-}
-function clearBtn(){ clearAll(); playSound('clear'); }
-
-function input(d){
-  playSound('click');
-  if(d==='.' && current.includes('.')) return;
-  if(current==="0" && d!=='.') current=d;
-  else current+=d;
-  updateDisplay();
-}
-function op(o){
-  playSound('click');
-  if(expr && /[+\-*/]$/.test(expr) && current==="0"){
-    expr = expr.slice(0,-1)+o;
-  }else{
-    expr += current + o;
-    current="0";
-  }
-  updateDisplay();
-}
-function back(){
-  playSound('click');
-  if(current.length>1) current=current.slice(0,-1);
-  else current="0";
-  updateDisplay();
-}
-function calc(){
-  playSound('click');
-  let full = expr + current;
-  if(!full) return;
-  if(/[+\-*/.]$/.test(full)){
-    setStatus('式が不完全です'); playSound('error'); return;
-  }
-  try{
-    full = percentFix(full);
-    const result = safeEval(full);
-    addHistory(full, result);
-    current = String(result);
-    expr=""; lastResult=result;
-    updateDisplay();
-    playSound('success');
-    speakAnswer(result);
-    setStatus('計算完了');
-  }catch(e){
-    setStatus('エラー'); playSound('error');
-  }
-}
-
-function startVoice(){
-  if(listening){
-    if(recognition) recognition.stop();
-    micActive=false;
-    return;
-  }
+  // Speech Recognition
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ setStatus('音声認識非対応'); return; }
-  
-  recognition = new SR();
-  recognition.lang='ja-JP';
-  recognition.interimResults=false;
-  recognition.continuous=false;
-  recognition.maxAlternatives=1;
-  
-  micActive=true; listening=true;
-  
-  recognition.onstart = ()=>{
-    listening=true;
-    $('mic').classList.add('listening');
-    setStatus('聞いています…');
-  };
-  
-  recognition.onresult = (e)=>{
-    const t = e.results[0][0].transcript.trim();
-    parseVoice(t);
-  };
-  
-  recognition.onerror = (e)=>{
-    setStatus('エラー: '+e.error);
-    playSound('error');
-  };
-  
-  recognition.onend = ()=>{
-    listening=false;
-    $('mic').classList.remove('listening');
-    if(micActive && mode==='continuous'){
-      setTimeout(()=>{ try{ recognition.start(); }catch(e){} }, 500);
-    }else{
-      micActive=false;
-      setStatus('マイク停止中');
+  if (SR) {
+    recognition = new SR();
+    recognition.lang = 'ja-JP';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      statusText.textContent = '音声待機中... 話してください';
+    };
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript.trim();
+      voiceTranscript.textContent = `「${transcript}」`;
+      processVoice(transcript);
+    };
+    recognition.onerror = (e) => {
+      if (e.error !== 'no-speech' && e.error !== 'aborted') {
+        voiceTranscript.textContent = `エラー: ${e.error}`;
+      }
+    };
+    recognition.onend = () => {
+      if (micActive && !isSpeaking) {
+        setTimeout(() => { try { recognition.start(); } catch(e){} }, 400);
+      }
+    };
+  } else {
+    statusText.textContent = '音声認識非対応のブラウザです';
+    micBtn.disabled = true;
+    micBtn.classList.add('opacity-40');
+  }
+
+  function updateMicUI() {
+    if (micActive) {
+      micBtn.classList.add('bg-red-500','pulse-red','border-red-400/50','text-white');
+      micBtn.classList.remove('bg-white/10','border-white/15');
+      statusDot.classList.remove('bg-white/25');
+      statusDot.classList.add('bg-red-400','animate-pulse');
+      statusText.classList.add('text-red-300');
+      statusText.textContent = '音声待機中...';
+      listenBadge.classList.remove('hidden');
+      listenBadge.classList.add('flex');
+    } else {
+      micBtn.classList.remove('bg-red-500','pulse-red','border-red-400/50','text-white');
+      micBtn.classList.add('bg-white/10','border-white/15');
+      statusDot.classList.add('bg-white/25');
+      statusDot.classList.remove('bg-red-400','animate-pulse');
+      statusText.classList.remove('text-red-300');
+      statusText.textContent = '停止中 - タップで再開';
+      listenBadge.classList.add('hidden');
+      listenBadge.classList.remove('flex');
+      voiceTranscript.textContent = '';
     }
-  };
-  
-  try{ recognition.start(); }catch(e){}
-}
+  }
 
-function parseVoice(t){
-  playSound('click');
-  
-  if(/(クリア|消去|全消去|消して|言い間違い|いいまちがい|間違えた)/.test(t)){
-    clearAll(); playSound('clear'); speak('クリアしました'); return;
+  function startMic() {
+    if (!recognition) return;
+    micActive = true;
+    updateMicUI();
+    try { recognition.start(); } catch(e){}
   }
-  if(/(つぎ|次|クリアして次)/.test(t)){
-    clearAll(true); playSound('clear'); setStatus('次の計算どうぞ'); speak('次どうぞ'); return;
+
+  function stopMic() {
+    micActive = false;
+    updateMicUI();
+    try { recognition && recognition.stop(); } catch(e){}
+    speechSynthesis.cancel();
+    isSpeaking = false;
   }
-  
-  let n = t;
-  n = n.replace(/たす|足す|プラス/g,'+');
-  n = n.replace(/ひく|引く|マイナス/g,'-');
-  n = n.replace(/かける|掛ける|✕|×|\*/g,'*');
-  n = n.replace(/わる|割る|÷/g,'/');
-  n = n.replace(/点|てん/g,'.');
-  n = n.replace(/パーセント|ぱーせんと|ぱー|パー/g,'*0.01');
-  n = n.replace(/イコール|は|＝|=/g,'');
-  n = n.replace(/[　\s]/g,'');
-  n = n.replace(/[０-９]/g, s=>String.fromCharCode(s.charCodeAt(0)-0xFEE0));
-  
-  let exprParsed = n.replace(/[^\d+\-*/().]/g,'');
-  
-  if(!exprParsed || /[+\-*/.]$/.test(exprParsed)){
-    setStatus('聞き取れませんでした'); playSound('error'); return;
+
+  micBtn.addEventListener('click', () => {
+    if (micActive) stopMic(); else startMic();
+  });
+
+  // Mode
+  function setMode(m) {
+    mode = m;
+    if (m === 'oneshot') {
+      modeOneshot.classList.add('bg-white','text-black','shadow');
+      modeOneshot.classList.remove('text-white/60');
+      modeContinuous.classList.remove('bg-white','text-black','shadow');
+      modeContinuous.classList.add('text-white/60');
+    } else {
+      modeContinuous.classList.add('bg-white','text-black','shadow');
+      modeContinuous.classList.remove('text-white/60');
+      modeOneshot.classList.remove('bg-white','text-black','shadow');
+      modeOneshot.classList.add('text-white/60');
+    }
   }
-  
-  try{
-    exprParsed = percentFix(exprParsed);
-    const result = safeEval(exprParsed);
-    current = String(result);
-    expr=""; lastResult=result;
+  modeOneshot.onclick = () => setMode('oneshot');
+  modeContinuous.onclick = () => setMode('continuous');
+  setMode('oneshot');
+
+  // Calculator core
+  function formatNumber(n) {
+    const [intPart, dec] = String(n).split('.');
+    const intFmt = Number(intPart).toLocaleString('ja-JP');
+    return dec ? `${intFmt}.${dec}` : intFmt;
+  }
+
+  function updateDisplay() {
+    expressionEl.textContent = currentExpr.replace(/\*/g,'×').replace(/\//g,'÷');
+  }
+
+  function clearAll(resetResult = true) {
+    currentExpr = '0';
     updateDisplay();
-    addHistory(exprParsed, result);
-    playSound('success');
-    speakAnswer(result);
-    setStatus(`「${t}」→ ${exprParsed}`);
-  }catch(e){
-    setStatus('計算できません'); playSound('error');
+    if (resetResult) resultEl.textContent = '0';
+    voiceTranscript.textContent = '';
+    if (mode === 'oneshot') lastResult = null;
   }
-}
 
-function setMode(m){
-  mode=m;
-  $('btn-oneshot').classList.toggle('active', m==='oneshot');
-  $('btn-continuous').classList.toggle('active', m==='continuous');
-  if(listening && recognition){
-    micActive=false;
-    recognition.stop();
+  function addHistory(expr, res, voice='') {
+    const item = document.createElement('div');
+    item.className = 'group flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 cursor-pointer transition';
+    item.innerHTML = `
+      <div class="min-w-0">
+        <div class="mono text-[12px] text-white/50 truncate">${voice ? `🗣️ ${voice}` : expr.replace(/\*/g,'×').replace(/\//g,'÷')}</div>
+        <div class="mono text-[13px] text-white/80 truncate">${expr.replace(/\*/g,'×').replace(/\//g,'÷')} = ${formatNumber(res)}</div>
+      </div>
+      <div class="text-[11px] text-white/30 group-hover:text-white/60">再利用</div>
+    `;
+    item.onclick = () => {
+      currentExpr = String(res);
+      updateDisplay();
+      resultEl.textContent = formatNumber(res);
+      lastResult = res;
+    };
+    historyEl.prepend(item);
+    while (historyEl.children.length > 8) historyEl.removeChild(historyEl.lastChild);
   }
-  setStatus(m==='oneshot'?'ワンショットモード':'連続モード');
-}
 
-$('mic').onclick = startVoice;
-$('btn-oneshot').onclick = ()=>setMode('oneshot');
-$('btn-continuous').onclick = ()=>setMode('continuous');
-$('speakToggle').onchange = ()=>{ if(!$('speakToggle').checked) speechSynthesis.cancel(); };
+  function calculate(expr, spoken='') {
+    // safety: only allowed chars
+    const safeExpr = expr.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0)-0xFEE0));
+    if (!/^[0-9+\-*/().% ]+$/.test(safeExpr)) {
+      resultEl.textContent = 'エラー';
+      speak('計算できません');
+      return;
+    }
+    try {
+      // Handle percent simple: already converted
+      const val = Function(`"use strict"; return (${safeExpr})`)();
+      if (!isFinite(val)) throw new Error('NaN');
+      const rounded = Math.round(val * 1e10) / 1e10;
+      resultEl.textContent = formatNumber(rounded);
+      expressionEl.textContent = expr.replace(/\*/g,'×').replace(/\//g,'÷');
+      currentExpr = String(rounded);
+      lastResult = rounded;
+      addHistory(safeExpr, rounded, spoken);
+      speak(`${rounded} です`);
+      if (mode === 'oneshot') {
+        setTimeout(() => clearAll(true), 2200);
+      }
+    } catch {
+      resultEl.textContent = 'エラー';
+      speak('エラーです');
+    }
+  }
 
-if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged = ()=>{}; speechSynthesis.getVoices(); }
+  // Voice processing
+  function processVoice(text) {
+    const t = text.normalize('NFKC');
 
-updateDisplay();
-setMode('oneshot');
+    // Stop commands
+    if (/(ストップ|すとっぷ|終了|しゅうりょう|マイクオフ|マイク おふ|止めて|停止)/i.test(t)) {
+      speak('音声を終了します', false);
+      setTimeout(stopMic, 400);
+      return;
+    }
+    if (/(クリア|くりあ|りせっと|リセット|消去|消して)/i.test(t)) {
+      clearAll(true);
+      speak('クリアしました');
+      return;
+    }
+    if (/(次|つぎ|ネクスト|つぎの)/i.test(t)) {
+      clearAll(true);
+      speak('次どうぞ');
+      return;
+    }
+
+    let expr = t
+      .replace(/たす|足す|プラス|ぷらす|＋|と/g, '+')
+      .replace(/ひく|引く|マイナス|まいなす|―|ー(?! |^)/g, '-')
+      .replace(/かける|掛ける|掛け|かっける|×|✕|エックス|＊|\*/g, '*')
+      .replace(/わる|割る|わり|÷|／|\//g, '/')
+      .replace(/パーセント|パーセンテージ|％|パー/g, '/100')
+      .replace(/点|てん|ドット|コンマ|まる/g, '.')
+      .replace(/イコール|は|＝|イコール/g, '')
+      .replace(/かっこひらく|左括弧|開き括弧|（|\(/g, '(')
+      .replace(/かっことじる|右括弧|閉じ括弧|）|\)/g, ')')
+      .replace(/ゼロ|零|れい/g, '0')
+      .replace(/一|いち/g, '1').replace(/二|に/g, '2').replace(/三|さん/g, '3')
+      .replace(/四|よん|し/g, '4').replace(/五|ご/g, '5').replace(/六|ろく/g, '6')
+      .replace(/七|なな|しち/g, '7').replace(/八|はち/g, '8').replace(/九|きゅう|く/g, '9')
+      .replace(/[、。，．？?！\s]/g, '');
+
+    expr = expr.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0)-0xFEE0));
+    expr = expr.replace(/[^0-9+\-*/().%]/g, '');
+
+    if (!expr) return;
+
+    // continuous chaining
+    if (mode === 'continuous' && lastResult !== null && /^[+\-*/%]/.test(expr)) {
+      expr = String(lastResult) + expr;
+    }
+
+    currentExpr = expr;
+    updateDisplay();
+    calculate(expr, t);
+  }
+
+  // Button handling
+  document.querySelectorAll('.key').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const k = btn.dataset.k;
+      if (k === 'C') { clearAll(true); return; }
+      if (k === '=') {
+        const expr = currentExpr.replace(/×/g,'*').replace(/÷/g,'/');
+        calculate(expr);
+        return;
+      }
+      if (currentExpr === '0' && /[0-9(]/.test(k)) {
+        currentExpr = k;
+      } else {
+        // replace visual operators
+        const map = {'/':'/', '*':'*'};
+        currentExpr += (k === '/' || k === '*') ? k : k;
+      }
+      updateDisplay();
+    });
+  });
+
+  // Keyboard support
+  window.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (/[0-9]/.test(k)) { document.querySelector(`[data-k="${k}"]`)?.click(); }
+    else if (k === '.') { document.querySelector('[data-k="."]')?.click(); }
+    else if (k === '(' || k === ')') { document.querySelector(`[data-k="${k}"]`)?.click(); }
+    else if (k === '+' ) { document.querySelector('[data-k="+"]')?.click(); }
+    else if (k === '-') { document.querySelector('[data-k="-"]')?.click(); }
+    else if (k === '*') { document.querySelector('[data-k="*"]')?.click(); }
+    else if (k === '/') { e.preventDefault(); document.querySelector('[data-k="/"]')?.click(); }
+    else if (k === 'Enter' || k === '=') { document.querySelector('[data-k="="]')?.click(); }
+    else if (k === 'Escape') { document.querySelector('[data-k="C"]')?.click(); }
+  });
+
+  // Init
+  updateDisplay();
+  updateMicUI();
+})();
 </script>
 </body>
 </html>
