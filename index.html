@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>音声電卓</title>
+<style>
+ body{margin:0;background:#0d0d0f;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:16px}
+ .calc{width:100%;max-width:340px;background:#1a1c20;border-radius:24px;box-shadow:0 20px 50px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05);padding:20px}
+ h1{font-size:1rem;margin:0;text-align:center;color:#9aa0aa;font-weight:600;letter-spacing:.1em}
+ #expr{min-height:22px;text-align:right;color:#7a7f89;font-size:.95rem;padding:4px 8px 0;overflow-x:auto;white-space:nowrap}
+ #screen{background:#0a0b0d;border-radius:14px;padding:16px 12px;font-size:2.8rem;text-align:right;font-weight:200;min-height:68px;box-shadow:inset 0 3px 10px rgba(0,0,0,.7);margin:6px 0 12px;overflow:hidden}
+ .row{display:flex;gap:8px;margin-top:8px}
+ button{flex:1;padding:17px 0;font-size:1.3rem;border:none;border-radius:14px;background:#2a2e35;color:#fff;touch-action:manipulation;transition:.08s;user-select:none}
+ button:active{transform:scale(.96);background:#3a4049}
+ button.op{background:#3d424d;color:#ffd27d}
+ button.func{background:#252932;color:#aab}
+ #mic{background:#4f46e5;font-size:1.5rem}
+ #mic.listening{background:#e11d48;animation:pulse 1s infinite}
+ @keyframes pulse{0%,100%{opacity:1}50%{opacity:.65}}
+ #status{text-align:center;margin-top:12px;height:20px;color:#7c8aff;font-size:.88rem}
+</style>
+</head>
+<body>
+<div class="calc">
+  <h1>音声電卓</h1>
+  <div style="margin:8px;text-align:center">
+    <button id="btnOne" onclick="setMode('oneshot')" style="padding:6px 12px;margin:4px;border-radius:8px;background:#444;color:#fff">ワンショット</button>
+    <button id="btnCon" onclick="setMode('continuous')" style="padding:6px 12px;margin:4px;border-radius:8px;background:#222;color:#aaa">連続</button>
+  </div>
+  <div id="expr"></div>
+  <div id="screen">0</div>
+  
+  <div class="row">
+    <button class="func" onclick="allClear()">AC</button>
+    <button class="func" onclick="backspace()">⌫</button>
+    <button class="func" onclick="input('%')">%</button>
+    <button class="op" onclick="input('/')">÷</button>
+  </div>
+  <div class="row">
+    <button onclick="input('7')">7</button>
+    <button onclick="input('8')">8</button>
+    <button onclick="input('9')">9</button>
+    <button class="op" onclick="input('*')">×</button>
+  </div>
+  <div class="row">
+    <button onclick="input('4')">4</button>
+    <button onclick="input('5')">5</button>
+    <button onclick="input('6')">6</button>
+    <button class="op" onclick="input('-')">−</button>
+  </div>
+  <div class="row">
+    <button onclick="input('1')">1</button>
+    <button onclick="input('2')">2</button>
+    <button onclick="input('3')">3</button>
+    <button class="op" onclick="input('+')">+</button>
+  </div>
+  <div class="row">
+    <button onclick="input('0')" style="flex:1.65">0</button>
+    <button onclick="input('.')">.</button>
+    <button id="mic" onclick="startVoice()">🎤</button>
+    <button class="op" onclick="calc()">=</button>
+  </div>
+  <div id="status"></div>
+</div>
+
+<script>
+let current='0';
+let expr='';
+let lastResult=null;
+let mode='oneshot';
+let autoClearTimer=null;
+let audioCtx=null;
+
+function update(){
+  document.getElementById('screen').textContent=current;
+  document.getElementById('expr').textContent=expr;
+}
+
+function initAudio(){
+  if(!audioCtx){
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+}
+
+function playSound(type){
+  if(!audioCtx) return;
+  const now=audioCtx.currentTime;
+  const gain=audioCtx.createGain();
+  gain.connect(audioCtx.destination);
+  
+  if(type==='pilon'){
+    const o1=audioCtx.createOscillator();
+    o1.type='sine'; o1.frequency.setValueAtTime(600,now);
+    const g1=audioCtx.createGain(); g1.gain.setValueAtTime(0.13,now); g1.gain.exponentialRampToValueAtTime(0.001,now+0.07);
+    o1.connect(g1); g1.connect(audioCtx.destination); o1.start(now); o1.stop(now+0.07);
+    const o2=audioCtx.createOscillator(); o2.type='sine'; o2.frequency.setValueAtTime(900,now+0.09);
+    const g2=audioCtx.createGain(); g2.gain.setValueAtTime(0.13,now+0.09); g2.gain.exponentialRampToValueAtTime(0.001,now+0.18);
+    o2.connect(g2); g2.connect(audioCtx.destination); o2.start(now+0.09); o2.stop(now+0.18);
+    return;
+  }
+  
+  const o=audioCtx.createOscillator(); o.type='sine'; o.connect(gain);
+  switch(type){
+    case 'click': o.frequency.setValueAtTime(1000,now); gain.gain.setValueAtTime(0.09,now); gain.gain.exponentialRampToValueAtTime(0.001,now+0.05); o.start(now); o.stop(now+0.05); break;
+    case 'success': o.frequency.setValueAtTime(880,now); gain.gain.setValueAtTime(0.12,now); gain.gain.exponentialRampToValueAtTime(0.001,now+0.08); o.start(now); o.stop(now+0.08); break;
+    case 'clear': o.frequency.setValueAtTime(700,now); o.frequency.exponentialRampToValueAtTime(400,now+0.12); gain.gain.setValueAtTime(0.12,now); gain.gain.exponentialRampToValueAtTime(0.001,now+0.12); o.start(now); o.stop(now+0.12); break;
+    case 'error': o.frequency.setValueAtTime(220,now); gain.gain.setValueAtTime(0.14,now); gain.gain.exponentialRampToValueAtTime(0.001,now+0.15); o.start(now); o.stop(now+0.15); break;
+  }
+}
+
+function setMode(m){
+  mode=m;
+  const b1=document.getElementById('btnOne');
+  const b2=document.getElementById('btnCon');
+  if(m==='oneshot'){
+    b1.style.background='#66f'; b1.style.color='#fff';
+    b2.style.background='#222'; b2.style.color='#aaa';
+    document.getElementById('status').textContent='ワンショットモード';
+  }else{
+    b2.style.background='#66f'; b2.style.color='#fff';
+    b1.style.background='#222'; b1.style.color='#aaa';
+    document.getElementById('status').textContent='連続モード';
+  }
+  clearTimeout(autoClearTimer);
+}
+
+function input(d){
+  initAudio();
+  clearTimeout(autoClearTimer);
+  if(current==='0' && /[0-9]/.test(d)){ current=d; }
+  else if(current==='0' && d==='.') { current='0.'; }
+  else { current+=d; }
+  update();
+}
+
+function backspace(){
+  initAudio();
+  clearTimeout(autoClearTimer);
+  current=current.slice(0,-1)||'0';
+  update();
+}
+
+function allClear(){
+  initAudio();
+  clearTimeout(autoClearTimer);
+  current='0'; expr=''; lastResult=null; update();
+  document.getElementById('status').textContent='';
+}
+
+function percentFix(s){
+  return s.replace(/(\d+(\.\d+)?)%/g,'($1/100)');
+}
+
+function calc(){
+  try{
+    clearTimeout(autoClearTimer);
+    let exp=current.replace(/×/g,'*').replace(/÷/g,'/');
+    exp=percentFix(exp);
+    if(!/^[0-9+\-*/.%() ]+$/.test(exp)) throw 'invalid';
+    const result=Function('"use strict";return ('+exp+')')();
+    if(!isFinite(result)) throw 'err';
+    expr=current+'=';
+    current=String(Math.round(result*1e10)/1e10);
+    lastResult=result;
+    update();
+    playSound('success');
+    if(mode==='oneshot'){
+      document.getElementById('status').textContent='OK → 自動クリア';
+      autoClearTimer=setTimeout(()=>{ allClear(); playSound('clear'); document.getElementById('status').textContent='自動クリア'; },1200);
+    }else{
+      document.getElementById('status').textContent='計算完了';
+    }
+  }catch(e){
+    playSound('error');
+    document.getElementById('status').textContent='エラー';
+  }
+}
+
+function parseVoice(raw){
+  let text=raw.replace(/足す/g,'たす').replace(/引く/g,'ひく').replace(/書ける/g,'かける');
+  
+  if(/(クリア|消去|全消去|消して|言い間違い|いいまちがい|間違えた)/.test(text)){
+    allClear(); playSound('clear'); document.getElementById('status').textContent='クリア'; return;
+  }
+  if(/(次|つぎ|ネクスト|ねくすと|続けて|つづける)/.test(text)){
+    if(mode==='oneshot'){
+      clearTimeout(autoClearTimer); allClear(); playSound('pilon'); document.getElementById('status').textContent='次の計算へ'; return;
+    }else{
+      if(lastResult!=null){ current=String(lastResult); expr=''; update(); playSound('pilon'); document.getElementById('status').textContent='連続'; return; }
+    }
+  }
+  
+  let t=text;
+  t=t.replace(/プラス/g,'+').replace(/マイナス/g,'-').replace(/割る/g,'/').replace(/掛ける/g,'*').replace(/かける/g,'*').replace(/点/g,'.').replace(/たす/g,'+').replace(/ひく/g,'-').replace(/わる/g,'/').replace(/×/g,'*').replace(/÷/g,'/').replace(/イコール|は|＝|=/g,'').replace(/\s+/g,'');
+  t=t.replace(/[^0-9+\-*/.%()]/g,'');
+  
+  if(t){
+    current=t; update();
+    document.getElementById('status').textContent='認識: '+raw;
+    setTimeout(calc,150);
+  }else{
+    playSound('error'); document.getElementById('status').textContent='聞き取れませんでした';
+  }
+}
+
+function startVoice(){
+  initAudio(); playSound('click');
+  if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)){
+    document.getElementById('status').textContent='音声認識非対応';
+    return;
+  }
+  const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const rec=new Rec();
+  rec.lang='ja-JP'; rec.interimResults=false; rec.continuous=false; rec.maxAlternatives=1;
+  const mic=document.getElementById('mic');
+  mic.classList.add('listening');
+  document.getElementById('status').textContent='聞き取り中...';
+  rec.onresult=e=>{
+    playSound('click');
+    const txt=e.results[0][0].transcript;
+    parseVoice(txt);
+  };
+  rec.onerror=()=>{
+    playSound('error'); document.getElementById('status').textContent='認識エラー';
+  };
+  rec.onend=()=>{ mic.classList.remove('listening'); };
+  try{ rec.start(); }catch{}
+}
+
+window.addEventListener('load',()=>{ update(); setMode('oneshot'); });
+document.addEventListener('touchstart',initAudio,{once:true});
+</script>
+</body>
+</html>
