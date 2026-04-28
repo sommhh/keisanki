@@ -2,403 +2,169 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>音声電卓 v6</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>音声電卓 安定版</title>
 <style>
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body {
-  background: #0a0a0a;
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  margin: 0;
-  padding: 16px;
-}
-.calc {
-  background: #171717;
-  padding: 20px;
-  border-radius: 24px;
-  max-width: 420px;
-  width: 100%;
-  box-shadow: 0 20px 60px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05);
-  border: 1px solid #262626;
-}
-h1 {
-  text-align: center;
-  font-size: 18px;
-  margin: 0 0 8px;
-  color: #a3a3a3;
-  font-weight: 600;
-  letter-spacing: .1em;
-}
-.mode-wrap {
-  display: flex;
-  justify-content: center;
-  margin: 8px 0 14px;
-  gap: 8px;
-}
-#btnOne, #btnCon {
-  padding: 8px 18px;
-  border: none;
-  border-radius: 999px;
-  color: #fff;
-  cursor: pointer;
-  font-size: 13px;
-  background: #333;
-  transition: .2s;
-  font-weight: 600;
-}
-#btnOne:active, #btnCon:active { transform: scale(.96); }
-#expression {
-  min-height: 26px;
-  text-align: right;
-  color: #737373;
-  font-size: 15px;
-  padding: 0 12px;
-  font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  white-space: nowrap;
-}
-#screen {
-  background: #000;
-  color: #22c55e;
-  font-size: 52px;
-  text-align: right;
-  padding: 12px 16px;
-  border-radius: 14px;
-  margin: 6px 0 8px;
-  font-family: 'SF Mono', 'Courier New', monospace;
-  overflow: hidden;
-  white-space: nowrap;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,.8);
-  border: 1px solid #1f1f1f;
-  letter-spacing: -1px;
-}
-#status {
-  text-align: center;
-  color: #818cf8;
-  font-size: 13px;
-  min-height: 20px;
-  margin: 4px 0 12px;
-  font-weight: 500;
-}
-.buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-button.calc-btn {
-  padding: 18px 0;
-  font-size: 22px;
-  border: none;
-  border-radius: 14px;
-  background: #262626;
-  color: #f5f5f5;
-  cursor: pointer;
-  transition: .12s;
-  font-weight: 500;
-  box-shadow: 0 2px 0 #0a0a0a, inset 0 1px 0 rgba(255,255,255,.05);
-}
-button.calc-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 0 0 #0a0a0a;
-  background: #333;
-}
-button.op { background: #f59e0b; color: #000; font-weight: 600; }
-button.op:active { background: #d97706; }
-button.func { background: #404040; color: #d4d4d4; }
-.mic {
-  width: 100%;
-  margin-top: 12px;
-  background: #4f46e5;
-  font-size: 26px;
-  padding: 14px;
-  border: none;
-  border-radius: 14px;
-  color: #fff;
-  cursor: pointer;
-  transition: .2s;
-  box-shadow: 0 4px 14px rgba(79,70,229,.3);
-  font-weight: 600;
-}
-.mic:active { transform: scale(.98); }
-.mic.listening { background: #ef4444; box-shadow: 0 4px 14px rgba(239,68,68,.4); animation: pulse 1.2s infinite; }
-@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .7 } }
+body{margin:0;background:#111;color:#fff;font-family:sans-serif;text-align:center}
+.calc{max-width:360px;margin:auto;padding:10px}
+#screen{font-size:42px;margin:10px 0}
+#expr{font-size:14px;color:#aaa}
+button{width:22%;height:60px;margin:1%;font-size:18px;border-radius:10px;border:none}
+.op{background:#334}
+.func{background:#555}
+#mic{width:80px;height:80px;border-radius:50%}
 </style>
 </head>
 <body>
+
 <div class="calc">
-  <h1>音声電卓 v6</h1>
-  <div class="mode-wrap">
-    <button id="btnOne" onclick="setMode('oneshot')">ワンショット</button>
-    <button id="btnCon" onclick="setMode('continuous')">連続</button>
-  </div>
-  <div id="expression"></div>
-  <div id="screen">0</div>
-  <div id="status">待機中</div>
-  <div class="buttons">
-    <button class="calc-btn func" onclick="allClear()">AC</button>
-    <button class="calc-btn func" onclick="backspace()">C</button>
-    <button class="calc-btn func" onclick="percent()">%</button>
-    <button class="calc-btn op" onclick="op('/')">÷</button>
-    
-    <button class="calc-btn" onclick="input('7')">7</button>
-    <button class="calc-btn" onclick="input('8')">8</button>
-    <button class="calc-btn" onclick="input('9')">9</button>
-    <button class="calc-btn op" onclick="op('*')">×</button>
-    
-    <button class="calc-btn" onclick="input('4')">4</button>
-    <button class="calc-btn" onclick="input('5')">5</button>
-    <button class="calc-btn" onclick="input('6')">6</button>
-    <button class="calc-btn op" onclick="op('-')">-</button>
-    
-    <button class="calc-btn" onclick="input('1')">1</button>
-    <button class="calc-btn" onclick="input('2')">2</button>
-    <button class="calc-btn" onclick="input('3')">3</button>
-    <button class="calc-btn op" onclick="op('+')">+</button>
-    
-    <button class="calc-btn" onclick="input('0')">0</button>
-    <button class="calc-btn" onclick="input('00')">00</button>
-    <button class="calc-btn" onclick="input('.')">.</button>
-    <button class="calc-btn op" onclick="calc()">＝</button>
-  </div>
-  <button id="micBtn" class="mic" onclick="startVoice()">🎤</button>
+<h2>音声電卓 安定版</h2>
+
+<div id="expr"></div>
+<div id="screen">0</div>
+<div id="status">待機中</div>
+
+<div>
+<button class="func" onclick="allClear()">AC</button>
+<button class="func" onclick="backspace()">⌫</button>
+<button class="func" onclick="input('%')">%</button>
+<button class="op" onclick="input('/')">÷</button>
+
+<button onclick="input('7')">7</button>
+<button onclick="input('8')">8</button>
+<button onclick="input('9')">9</button>
+<button class="op" onclick="input('*')">×</button>
+
+<button onclick="input('4')">4</button>
+<button onclick="input('5')">5</button>
+<button onclick="input('6')">6</button>
+<button class="op" onclick="input('-')">−</button>
+
+<button onclick="input('1')">1</button>
+<button onclick="input('2')">2</button>
+<button onclick="input('3')">3</button>
+<button class="op" onclick="input('+')">＋</button>
+
+<button onclick="input('0')">0</button>
+<button onclick="input('.')">.</button>
+<button id="mic" onclick="startVoice()">🎤</button>
+<button onclick="calc()" class="op">＝</button>
+</div>
+
 </div>
 
 <script>
-let current="0", expr="", lastResult=null, mode='oneshot', autoClearTimer=null, listening=false, autoListen=false, rec=null;
-let audioCtx=null;
-let synthVoices = [];
+// ===== 状態 =====
+let current="0";
+let tokens=[];
 
-// 音声データの取得
-if ('speechSynthesis' in window) {
-  window.speechSynthesis.onvoiceschanged = () => {
-    synthVoices = window.speechSynthesis.getVoices();
-  };
-}
-
-const screen = document.getElementById('screen');
-const expression = document.getElementById('expression');
-const status = document.getElementById('status');
-const micBtn = document.getElementById('micBtn');
-
-function initAudio(){
-  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-}
-function playSound(type){
-  try{
-    initAudio();
-    const now = audioCtx.currentTime;
-    const play = (freq,dur,vol=0.15,delay=0,type='sine')=>{
-      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-      o.type=type; o.frequency.setValueAtTime(freq, now+delay);
-      g.gain.setValueAtTime(vol, now+delay);
-      g.gain.exponentialRampToValueAtTime(0.001, now+delay+dur);
-      o.connect(g); g.connect(audioCtx.destination);
-      o.start(now+delay); o.stop(now+delay+dur+0.01);
-    };
-    if(type==='click') play(1000,0.05);
-    else if(type==='success') play(880,0.08);
-    else if(type==='clear'){ play(700,0.12,0.15,0); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.setValueAtTime(700,now); o.frequency.exponentialRampToValueAtTime(400,now+0.12); g.gain.setValueAtTime(0.15,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.12); o.start(now); o.stop(now+0.13); }
-    else if(type==='pilon'){ play(600,0.07); play(900,0.09,0.15,0.09); }
-    else if(type==='error') play(220,0.15,0.2,0,'sawtooth');
-  }catch(e){}
-}
-
-function speak(text, callback){
-  if(!('speechSynthesis' in window)) { if(callback) callback(); return; }
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang='ja-JP'; 
-  u.rate=1.1; 
-  u.pitch=1.4; // ピッチを上げて女性らしい声に
-
-  // 音声リストから女性や日本語の声を優先的に探す
-  if(synthVoices.length === 0) synthVoices = window.speechSynthesis.getVoices();
-  const jaVoices = synthVoices.filter(v => v.lang.includes('ja'));
-  let femaleVoice = jaVoices.find(v => /Female|Kyoko|Haruka|Mei|Google 日本語/i.test(v.name));
-  
-  if(femaleVoice) {
-    u.voice = femaleVoice;
-  } else if(jaVoices.length > 0) {
-    u.voice = jaVoices[0];
-  }
-
-  // 読み上げている間は、マイクが自分の声を拾わないように一時停止する
-  let resumeMic = autoListen;
-  if(resumeMic) {
-     autoListen = false;
-     if(rec) try{ rec.abort(); }catch(e){}
-  }
-
-  u.onend = () => {
-     if(resumeMic && listening) {
-         autoListen = true;
-         setTimeout(startRecLoop, 200); // 読み上げ後にマイクを即再開
-     }
-     if(callback) callback();
-  };
-
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
-}
-
+// ===== 表示 =====
 function update(){
-  screen.innerText = current;
+  document.getElementById("screen").textContent=current;
+  document.getElementById("expr").textContent=tokens.join(" ");
 }
 
-function input(d){
-  playSound('click');
-  if(d==='00' && current==="0") return;
-  if(current==="0" && d!=="." && d!=="00"){
-    current=d;
-  }else{
-    if(d==='.' && current.includes('.')) return;
-    if(current.length<14) current += d;
+// ===== 入力 =====
+function input(k){
+
+  if(/[0-9]/.test(k)){
+    current = current==="0" ? k : current+k;
   }
+  else if(k==="."){
+    if(!current.includes(".")) current+=".";
+  }
+  else if(["+","-","*","/","%"].includes(k)){
+    tokens.push(parseFloat(current));
+    tokens.push(k);
+    current="0";
+  }
+
   update();
 }
 
+// ===== C =====
 function backspace(){
-  playSound('click');
-  if(current.length>1) current = current.slice(0,-1);
-  else current="0";
+  current = current.length>1 ? current.slice(0,-1) : "0";
   update();
 }
 
+// ===== AC =====
 function allClear(){
-  playSound('clear');
-  current="0"; expr="";
-  if(autoClearTimer){ clearTimeout(autoClearTimer); autoClearTimer=null; }
-  expression.innerText="";
-  status.innerText="クリア";
-  update();
-}
-
-function percent(){
-  playSound('click');
-  if(!current.includes('%')){ current+= '%'; update(); }
-}
-
-function percentFix(s){
-  return s.replace(/(\d+(\.\d+)?)%/g, '($1/100)');
-}
-
-function op(o){
-  playSound('click');
-  if(expr && /[+\-*/]$/.test(expr) && current==="0"){
-    expr = expr.slice(0,-1)+o;
-  }else{
-    expr += current + o;
-  }
   current="0";
-  expression.innerText = expr.replace(/\*/g,'×').replace(/\//g,'÷');
+  tokens=[];
   update();
 }
 
+// ===== 計算（安全）=====
 function calc(){
-  initAudio();
-  let full = expr + current;
-  if(/[+\-*/]$/.test(full)){
-    status.innerText="式が途中";
-    playSound('error');
-    return;
-  }
+
+  tokens.push(parseFloat(current));
+
   try{
-    let evalStr = percentFix(full);
-    let result = Function('return '+ evalStr)();
-    result = Number(Number(result).toPrecision(12));
-    expression.innerText = full.replace(/\*/g,'×').replace(/\//g,'÷') + '=';
-    current = String(result);
-    lastResult = result;
-    update();
-    playSound('success');
-    status.innerText="OK";
-    speak(`答えは ${result} です`, ()=>{
-      if(mode==='oneshot'){
-        setTimeout(()=>{ allClear(); playSound('clear'); status.innerText='次の計算どうぞ'; }, 400);
-      }
-    });
-  }catch(e){
-    status.innerText="エラー";
-    playSound('error');
+    let result = tokens[0];
+
+    for(let i=1;i<tokens.length;i+=2){
+      let op = tokens[i];
+      let num = tokens[i+1];
+
+      if(op==="+") result += num;
+      if(op==="-") result -= num;
+      if(op==="*") result *= num;
+      if(op==="/") result /= num;
+      if(op==="%") result = result * (num/100);
+    }
+
+    current = String(Number(result.toPrecision(10)));
+    tokens=[];
+
+  }catch{
+    current="0";
   }
+
+  update();
 }
 
-function setMode(m){
-  mode=m;
-  document.getElementById('btnOne').style.background = m==='oneshot' ? '#4f46e5' : '#333';
-  document.getElementById('btnCon').style.background = m==='continuous' ? '#4f46e5' : '#333';
-  playSound('click');
-  speak(m==='oneshot'?'ワンショットモード':'連続モード');
-}
-
+// ===== 音声 =====
 function startVoice(){
-  initAudio();
-  if(listening){
-    // マイクを完全にオフにする処理
-    listening=false;
-    autoListen=false;
-    if(rec) try{ rec.abort(); }catch(e){}
-    micBtn.classList.remove('listening');
-    micBtn.innerText='🎤';
-    status.innerText="停止";
-    playSound('clear');
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if(!SR){
+    alert("音声未対応（iPhoneはSafariで開いて）");
     return;
   }
-  
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SR){ alert('このブラウザは音声認識に対応していません'); return; }
-  
-  listening=true; 
-  autoListen=true;
-  micBtn.classList.add('listening');
-  micBtn.innerText='●';
-  playSound('click');
-  
-  startRecLoop();
+
+  const rec = new SR();
+  rec.lang="ja-JP";
+
+  rec.onresult=e=>{
+    let txt=e.results[0][0].transcript;
+
+    txt = txt.replace(/たす/g,"+")
+             .replace(/ひく/g,"-")
+             .replace(/かける/g,"*")
+             .replace(/わる/g,"/");
+
+    let exp = txt.replace(/[^\d+\-*/]/g,"");
+
+    if(!exp) return;
+
+    try{
+      let result = eval(exp);
+      current = String(result);
+      tokens=[];
+    }catch{
+      current="0";
+    }
+
+    update();
+  };
+
+  rec.start();
 }
 
-function startRecLoop(){
-  if(!autoListen || !listening) return;
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  rec = new SR();
-  rec.lang='ja-JP'; 
-  rec.interimResults=false; 
-  rec.maxAlternatives=1; 
-  rec.continuous=false; // 都度切って再起動させることで安定稼働させる
-  
-  status.innerText="聞いてます…";
-  
-  rec.onresult = e=>{
-    let txt = e.results[e.results.length-1][0].transcript;
-    status.innerText="音声:"+txt;
-    txt = txt.replace(/足す/g,'たす').replace(/引く/g,'ひく').replace(/掛ける/g,'かける');
-    parseVoice(txt);
-  };
-  
-  rec.onend = ()=>{
-    // 自動で再開（マイクがオンの間はずっとループ）
-    if(autoListen && listening){
-      setTimeout(startRecLoop, 300);
-    }
-  };
-  
-  rec.onerror = (e)=>{
-    if(e.error !== 'no-speech') {
-        status.innerText="エラー";
-    }
-    // エラーが起きても自動で再開
-    if(autoListen && listening){
-      setTimeout(startRecLoop, 500);
-    }
-  };
-  
-  try{ rec.start(); }catch(e){}
-}
+update();
+</script>
 
-function parseVoice(t){
-  playSound('click');
-  if(/(クリア|消去|全消去|消
+</body>
+</html>
