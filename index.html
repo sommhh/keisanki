@@ -2,331 +2,870 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>音声電卓 - Bluetooth & 連続</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+
+<title>音声電卓 OFFLINE PRO</title>
+
 <meta name="theme-color" content="#0b1020">
+
+<!-- PWA -->
+<link rel="manifest" href="data:application/json,{
+  &quot;name&quot;:&quot;音声電卓 OFFLINE PRO&quot;,
+  &quot;short_name&quot;:&quot;音声電卓&quot;,
+  &quot;display&quot;:&quot;standalone&quot;,
+  &quot;background_color&quot;:&quot;#070b16&quot;,
+  &quot;theme_color&quot;:&quot;#0b1020&quot;,
+  &quot;start_url&quot;:&quot;.&quot;
+}">
+
 <style>
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI",Meiryo,sans-serif;background:#070b16;color:#e2e8f0;display:flex;align-items:center;justify-content:center;padding:16px;min-height:100vh;touch-action:manipulation}
-  body::before{content:"";position:fixed;inset:-20%;z-index:-1;background:radial-gradient(40% 35% at 15% 20%,rgba(99,102,241,.35)0%,transparent 60%),radial-gradient(35% 30% at 85% 15%,rgba(236,72,153,.28)0%,transparent 60%),radial-gradient(45% 40% at 20% 85%,rgba(56,189,248,.3)0%,transparent 60%);filter:blur(40px)}
-  .app{width:100%;max-width:420px}
-  .card{background:rgba(15,23,42,.55);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);border:1px solid rgba(148,163,184,.15);border-radius:28px;box-shadow:0 25px 60px rgba(0,0,0,.55);padding:22px 20px}
-  h1{margin:0;text-align:center;font-size:22px;font-weight:800;background:linear-gradient(135deg,#93c5fd 0%,#c4b5fd 50%,#f9a8d4 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .subtitle{margin:4px 0 14px;text-align:center;font-size:12px;color:#94a3b8}
-  .display{background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.3));border:1px solid rgba(148,163,184,.12);border-radius:20px;padding:18px 16px;margin:16px 0;min-height:118px;display:flex;flex-direction:column;justify-content:flex-end}
-  .display-secondary{font-size:13px;color:#94a3b8;min-height:18px;text-align:right;word-break:break-all;transition:opacity .2s}
-  .display-main{font-size:44px;font-weight:700;font-family:"SF Mono",ui-monospace,Monaco,monospace;text-align:right;line-height:1.15;word-break:break-all;transition:color .2s}
-  .display-main.listening{color:#c4b5fd}
-  .display-main.error{color:#f87171}
-  .mic-btn{width:100%;border:none;border-radius:18px;padding:16px;background:linear-gradient(135deg,#2563eb 0%,#7c3aed 55%,#db2777 100%);color:#fff;font-size:16.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;box-shadow:0 10px 30px rgba(124,58,237,.35);transition:transform .1s,filter .2s}
-  .mic-btn:active{transform:scale(.98)}
-  .mic-btn.listening{animation:pulse 1.8s infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(168,85,247,.55)}70%{box-shadow:0 0 0 16px rgba(168,85,247,0)}100%{box-shadow:0 0 0 0 rgba(168,85,247,0)}}
-  .wave{display:flex;gap:3px;align-items:flex-end;height:18px}
-  .wave span{width:3px;height:4px;background:#fff;border-radius:2px;opacity:.85}
-  .mic-btn.listening .wave span{animation:wave 1s infinite ease-in-out}
-  .wave span:nth-child(2){animation-delay:.1s}.wave span:nth-child(3){animation-delay:.2s}.wave span:nth-child(4){animation-delay:.3s}.wave span:nth-child(5){animation-delay:.4s}
-  @keyframes wave{0%,100%{height:4px}50%{height:17px}}
-  .controls{display:flex;justify-content:space-between;margin:12px 2px;font-size:13px;color:#cbd5e1}
-  .status{font-size:11.5px;color:#64748b}
-  .buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:8px}
-  .btn{padding:15px 0;border:1px solid rgba(148,163,184,.12);border-radius:14px;background:rgba(255,255,255,.04);color:#e2e8f0;font-size:20px;cursor:pointer;transition:transform .08s,background .15s}
-  .btn:active{transform:scale(.96);background:rgba(255,255,255,.08)}
-  .btn-func{color:#a5b4fc}.btn-op{color:#f9a8d4}
-  .btn-equals{grid-column:span 4;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;font-weight:700;margin-top:4px}
-  .history{margin-top:16px;background:rgba(0,0,0,.3);border:1px solid rgba(148,163,184,.1);border-radius:16px;padding:12px;max-height:180px;overflow:auto}
-  .history h3{margin:0 0 8px;font-size:12px;color:#94a3b8}
-  .history ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
-  .history li{display:flex;justify-content:space-between;padding:7px 9px;background:rgba(255,255,255,.03);border-radius:9px;font-family:ui-monospace,monospace;font-size:12.5px;cursor:pointer;transition:background .15s}
-  .history li:hover{background:rgba(255,255,255,.08)}
-  .instructions{margin:12px 4px 0;font-size:11px;color:#7c8ba1;text-align:center;line-height:1.5}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Yu Gothic UI",Meiryo,sans-serif;
+  background:#070b16;
+  color:#e2e8f0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:14px;
+  touch-action:manipulation;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:-20%;
+  z-index:-1;
+  background:
+    radial-gradient(40% 35% at 15% 20%,rgba(99,102,241,.35),transparent 60%),
+    radial-gradient(35% 30% at 85% 15%,rgba(236,72,153,.28),transparent 60%),
+    radial-gradient(45% 40% at 20% 85%,rgba(56,189,248,.3),transparent 60%);
+  filter:blur(40px);
+}
+
+.app{
+  width:100%;
+  max-width:430px;
+}
+
+.card{
+  background:rgba(15,23,42,.58);
+  backdrop-filter:blur(28px);
+  border-radius:28px;
+  padding:20px;
+  border:1px solid rgba(148,163,184,.12);
+  box-shadow:0 25px 60px rgba(0,0,0,.55);
+}
+
+h1{
+  margin:0;
+  text-align:center;
+  font-size:24px;
+  font-weight:900;
+  background:linear-gradient(135deg,#93c5fd,#c4b5fd,#f9a8d4);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+
+.sub{
+  margin-top:6px;
+  text-align:center;
+  font-size:12px;
+  color:#94a3b8;
+}
+
+.display{
+  margin-top:16px;
+  background:rgba(0,0,0,.38);
+  border-radius:20px;
+  padding:18px;
+  border:1px solid rgba(148,163,184,.12);
+  min-height:120px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+}
+
+.sub-display{
+  text-align:right;
+  font-size:13px;
+  color:#94a3b8;
+  min-height:18px;
+  word-break:break-all;
+}
+
+.main-display{
+  text-align:right;
+  font-size:44px;
+  line-height:1.15;
+  font-weight:800;
+  word-break:break-all;
+  font-family:ui-monospace,monospace;
+}
+
+.main-display.error{
+  color:#f87171;
+}
+
+.main-display.listening{
+  color:#c4b5fd;
+}
+
+.mic-btn{
+  width:100%;
+  margin-top:14px;
+  border:none;
+  border-radius:18px;
+  padding:16px;
+  background:linear-gradient(135deg,#2563eb,#7c3aed,#db2777);
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  transition:.15s;
+}
+
+.mic-btn:active{
+  transform:scale(.98);
+}
+
+.mic-btn.listening{
+  animation:pulse 1.8s infinite;
+}
+
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(168,85,247,.55)}
+  70%{box-shadow:0 0 0 16px rgba(168,85,247,0)}
+  100%{box-shadow:0 0 0 0 rgba(168,85,247,0)}
+}
+
+.wave{
+  display:flex;
+  gap:3px;
+  align-items:flex-end;
+  height:18px;
+}
+
+.wave span{
+  width:3px;
+  height:4px;
+  background:#fff;
+  border-radius:2px;
+}
+
+.mic-btn.listening .wave span{
+  animation:wave 1s infinite ease-in-out;
+}
+
+.wave span:nth-child(2){animation-delay:.1s}
+.wave span:nth-child(3){animation-delay:.2s}
+.wave span:nth-child(4){animation-delay:.3s}
+.wave span:nth-child(5){animation-delay:.4s}
+
+@keyframes wave{
+  0%,100%{height:4px}
+  50%{height:17px}
+}
+
+.controls{
+  margin:12px 2px;
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  color:#cbd5e1;
+}
+
+.status{
+  color:#64748b;
+}
+
+.buttons{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:9px;
+}
+
+.btn{
+  border:none;
+  border-radius:14px;
+  padding:16px 0;
+  font-size:20px;
+  cursor:pointer;
+  background:rgba(255,255,255,.05);
+  color:#fff;
+  border:1px solid rgba(148,163,184,.1);
+}
+
+.btn:active{
+  transform:scale(.96);
+}
+
+.func{
+  color:#a5b4fc;
+}
+
+.op{
+  color:#f9a8d4;
+}
+
+.eq{
+  grid-column:span 4;
+  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+  font-weight:800;
+}
+
+.history{
+  margin-top:16px;
+  background:rgba(0,0,0,.28);
+  border-radius:16px;
+  padding:12px;
+  max-height:180px;
+  overflow:auto;
+}
+
+.history h3{
+  margin:0 0 8px;
+  font-size:12px;
+  color:#94a3b8;
+}
+
+.history ul{
+  list-style:none;
+  padding:0;
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.history li{
+  background:rgba(255,255,255,.04);
+  border-radius:10px;
+  padding:8px;
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  font-family:ui-monospace,monospace;
+  cursor:pointer;
+}
+
+.footer{
+  margin-top:12px;
+  text-align:center;
+  font-size:11px;
+  color:#7c8ba1;
+  line-height:1.5;
+}
+
+.offline{
+  color:#22c55e;
+  font-weight:700;
+}
+
 </style>
 </head>
+
 <body>
+
 <div class="app">
-  <div class="card">
-    <h1>音声電卓</h1>
-    <p class="subtitle">Bluetoothイヤホン・連続計算対応</p>
-    
-    <div class="display">
-      <div class="display-secondary" id="displaySecondary"></div>
-      <div class="display-main" id="displayMain">0</div>
-    </div>
 
-    <button class="mic-btn" id="micBtn" aria-label="音声入力開始">
-      <div class="wave"><span></span><span></span></div>
-      <span id="micText">タップで開始</span>
-    </button>
+<div class="card">
 
-    <div class="controls">
-      <span>連続モード</span>
-      <span class="status" id="status">準備完了</span>
-    </div>
+<h1>音声電卓 OFFLINE PRO</h1>
 
-    <div class="buttons">
-      <button class="btn btn-func" data-action="ac">AC</button>
-      <button class="btn btn-func" data-action="clear">C</button>
-      <button class="btn btn-func" data-value="(">(</button>
-      <button class="btn btn-func" data-value=")">)</button>
-      <button class="btn" data-value="7">7</button>
-      <button class="btn" data-value="8">8</button>
-      <button class="btn" data-value="9">9</button>
-      <button class="btn btn-func" data-action="back">⌫</button>
-      <button class="btn" data-value="4">4</button>
-      <button class="btn" data-value="5">5</button>
-      <button class="btn" data-value="6">6</button>
-      <button class="btn btn-op" data-value="/">÷</button>
-      <button class="btn" data-value="1">1</button>
-      <button class="btn" data-value="2">2</button>
-      <button class="btn" data-value="3">3</button>
-      <button class="btn btn-op" data-value="*">×</button>
-      <button class="btn" data-value="0">0</button>
-      <button class="btn" data-value=".">.</button>
-      <button class="btn btn-op" data-value="-">−</button>
-      <button class="btn btn-op" data-value="+">+</button>
-      <button class="btn btn-equals" data-action="equals">=</button>
-    </div>
+<div class="sub">
+オフライン対応・普通の電卓としても完全動作
+</div>
 
-    <div class="history">
-      <h3>履歴（タップで再計算）</h3>
-      <ul id="historyList"></ul>
-    </div>
-    <p class="instructions">「3たす5」→「たす2」→「かける4」<br>AirPods等の再生ボタンでも開始/停止できます</p>
-  </div>
+<div class="display">
+<div class="sub-display" id="subDisplay"></div>
+<div class="main-display" id="mainDisplay">0</div>
+</div>
+
+<button class="mic-btn" id="micBtn">
+
+<div class="wave">
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+</div>
+
+<span id="micText">音声入力開始</span>
+
+</button>
+
+<div class="controls">
+<div id="modeLabel">通常計算モード</div>
+<div class="status" id="status">準備完了</div>
+</div>
+
+<div class="buttons">
+
+<button class="btn func" data-action="ac">AC</button>
+<button class="btn func" data-action="clear">C</button>
+<button class="btn func" data-value="(">(</button>
+<button class="btn func" data-value=")">)</button>
+
+<button class="btn" data-value="7">7</button>
+<button class="btn" data-value="8">8</button>
+<button class="btn" data-value="9">9</button>
+<button class="btn op" data-value="/">÷</button>
+
+<button class="btn" data-value="4">4</button>
+<button class="btn" data-value="5">5</button>
+<button class="btn" data-value="6">6</button>
+<button class="btn op" data-value="*">×</button>
+
+<button class="btn" data-value="1">1</button>
+<button class="btn" data-value="2">2</button>
+<button class="btn" data-value="3">3</button>
+<button class="btn op" data-value="-">−</button>
+
+<button class="btn" data-value="0">0</button>
+<button class="btn" data-value=".">.</button>
+<button class="btn func" data-action="back">⌫</button>
+<button class="btn op" data-value="+">+</button>
+
+<button class="btn eq" data-action="equals">=</button>
+
+</div>
+
+<div class="history">
+
+<h3>
+履歴 <span class="offline">● OFFLINE</span>
+</h3>
+
+<ul id="historyList"></ul>
+
+</div>
+
+<div class="footer">
+オフライン時も通常電卓として利用可能<br>
+音声認識はオンライン時のみ
+</div>
+
+</div>
 </div>
 
 <script>
 (() => {
-const displayMain = document.getElementById('displayMain');
-const displaySecondary = document.getElementById('displaySecondary');
-const micBtn = document.getElementById('micBtn');
-const micText = document.getElementById('micText');
-const statusEl = document.getElementById('status');
-const historyList = document.getElementById('historyList');
 
-let currentExpr = '';
-let lastResult = null;
-let history = [];
+"use strict";
 
-const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+const $ = id => document.getElementById(id);
+
+const mainDisplay = $("mainDisplay");
+const subDisplay = $("subDisplay");
+const micBtn = $("micBtn");
+const micText = $("micText");
+const statusEl = $("status");
+const historyList = $("historyList");
+
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 let recognition = null;
+
+let currentExpr = "";
+let lastResult = null;
+let history = [];
+
 let listening = false;
-let continuousMode = false;
-let manualStop = false;
 
-// --- Bluetooth Media Keys ---
-try {
-  if ('mediaSession' in navigator) {
-    navigator.mediaSession.metadata = new MediaMetadata({ title: '音声電卓', artist: '連続計算モード' });
-    const toggle = () => toggleListen();
-    ['play','pause','playpause'].forEach(action => {
-      try { navigator.mediaSession.setActionHandler(action, toggle); } catch(e){}
-    });
-    try { navigator.mediaSession.setActionHandler('previoustrack', () => clearAll()); } catch(e){}
-  }
-} catch(e){}
-
-// --- 音声認識初期化 ---
-if (SR) {
-  recognition = new SR();
-  recognition.lang = 'ja-JP';
-  recognition.interimResults = true;
-  recognition.continuous = !isIOS;
-
-  recognition.onstart = () => {
-    listening = true;
-    micBtn.classList.add('listening');
-    micText.textContent = isIOS ? '聞き取り中' : '聞き取り中（連続）';
-    statusEl.textContent = '音声入力中';
-    displayMain.classList.add('listening');
-  };
-
-  recognition.onend = () => {
-    listening = false;
-    micBtn.classList.remove('listening');
-    displayMain.classList.remove('listening');
-    if (continuousMode && !manualStop && !isIOS) {
-      statusEl.textContent = '再開中...';
-      setTimeout(() => { try { recognition.start(); } catch(e){} }, 250);
-    } else {
-      micText.textContent = 'タップで開始';
-      statusEl.textContent = manualStop ? '停止中' : '準備完了';
-    }
-  };
-
-  recognition.onerror = (e) => {
-    showError('マイク権限を確認');
-    stopListen();
-  };
-
-  recognition.onresult = (e) => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const transcript = e.results[i][0].transcript.trim();
-      if (e.results[i].isFinal) {
-        handleVoice(transcript);
-      } else {
-        interim = transcript;
-      }
-    }
-    if (interim) {
-      displayMain.textContent = interim;
-      displaySecondary.textContent = '聞き取り中...';
-    }
-  };
-
-  micBtn.onclick = toggleListen;
-} else {
-  micText.textContent = '音声非対応';
-  statusEl.textContent = '手入力モード';
-  micBtn.onclick = () => {
-    micText.textContent = 'このブラウザは非対応';
-    setTimeout(()=> micText.textContent='手入力モード', 1200);
-  };
+function vibrate(ms=25){
+  try{
+    navigator.vibrate?.(ms);
+  }catch(e){}
 }
 
-// --- 日本語→式変換 ---
-function toHalfWidth(str){
-  return str.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+function setStatus(text){
+  statusEl.textContent = text;
 }
 
-function normalize(s){
-  s = toHalfWidth(s.toLowerCase());
-  
-  if (/^(クリア|りせっと|ぜんぶけして|オールクリア)/.test(s)) return '__CLEAR__';
-  if (/^(ストップ|停止|おわり|やめて|とめて)/.test(s)) return '__STOP__';
-
-  return s
-    .replace(/たす|足す|プラス|ぷらす/g, '+')
-    .replace(/ひく|引く|マイナス|まいなす/g, '-')
-    .replace(/かける|掛ける|かっけ|じょう|ばい/g, '*')
-    .replace(/わる|割る|わーる/g, '/')
-    .replace(/てん|点|どっと|ぽいんと|・/g, '.')
-    .replace(/かっこひらく|かっこ開く|ひらく/g, '(')
-    .replace(/かっことじる|かっこ閉じる|とじる/g, ')')
-    .replace(/[＝=]/g, '')
-    .replace(/イコール|は/g, '')
-    .replace(/[^0-9+\-*/().]/g, '')
-    .replace(/([+\-*/.]){2,}/g, m => m.slice(-1));
+function updateDisplay(main,sub=""){
+  mainDisplay.textContent = main || "0";
+  subDisplay.textContent = sub;
+  mainDisplay.classList.remove("error");
 }
 
-function handleVoice(text){
-  const expr = normalize(text);
-  if (expr === '__CLEAR__') { clearAll(); return; }
-  if (expr === '__STOP__') { stopListen(); return; }
-  if (!expr) return;
+function showError(msg){
 
-  let finalExpr = expr;
-  if (/^[+\-*/]/.test(expr) && lastResult !== null) {
-    finalExpr = lastResult + expr;
+  const old = mainDisplay.textContent;
+
+  mainDisplay.textContent = msg;
+  mainDisplay.classList.add("error");
+
+  vibrate([60,40,60]);
+
+  setTimeout(()=>{
+    mainDisplay.classList.remove("error");
+    mainDisplay.textContent = old;
+  },1400);
+}
+
+function saveHistory(){
+  localStorage.setItem(
+    "offlineVoiceCalcHistory",
+    JSON.stringify(history)
+  );
+}
+
+function loadHistory(){
+
+  try{
+
+    const h = JSON.parse(
+      localStorage.getItem("offlineVoiceCalcHistory") || "[]"
+    );
+
+    if(Array.isArray(h)){
+      history = h;
+    }
+
+  }catch(e){
+    history = [];
   }
 
-  currentExpr = finalExpr;
-  updateDisplay();
-  calculate(finalExpr, text);
+  renderHistory();
 }
 
-function safeEval(expr){
-  if (!/^[0-9+\-*/().]+$/.test(expr)) throw 'bad';
-  const open = (expr.match(/\(/g)||[]).length;
-  const close = (expr.match(/\)/g)||[]).length;
-  if (open > close) expr += ')'.repeat(open - close);
-  return Function('"use strict";return (' + expr + ')')();
-}
+function renderHistory(){
 
-function calculate(expr, original=''){
-  try {
-    expr = expr.replace(/[+\-*/.]+$/,'');
-    if (!expr) return;
-    const result = safeEval(expr);
-    if (!isFinite(result)) throw 'inf';
-    
-    lastResult = result;
-    currentExpr = String(result);
+  historyList.innerHTML = "";
 
-    displayMain.textContent = Number.isInteger(result) ? result.toLocaleString('ja-JP') : parseFloat(result.toFixed(10));
-    displaySecondary.textContent = original ? '🎤 ' + original + ' = ' + expr : expr;
+  history.forEach(item=>{
 
-    addHistory(expr, result);
-  } catch {
-    showError('計算できません');
-  }
-}
+    const li = document.createElement("li");
 
-function addHistory(expr, res){
-  history.unshift({expr, res});
-  if (history.length > 20) history.pop();
-  historyList.innerHTML = '';
-  history.forEach(h => {
-    const li = document.createElement('li');
-    li.innerHTML = `<span>${h.expr}</span><span>= ${h.res}</span>`;
-    li.onclick = () => {
-      currentExpr = h.expr;
-      updateDisplay();
-      calculate(h.expr);
-      if (recognition && !listening && continuousMode) startListen();
+    li.innerHTML = `
+      <span>${escapeHtml(item.expr)}</span>
+      <span>= ${escapeHtml(String(item.result))}</span>
+    `;
+
+    li.onclick = ()=>{
+
+      currentExpr = String(item.result);
+      lastResult = item.result;
+
+      updateDisplay(
+        String(item.result),
+        item.expr + " ="
+      );
     };
+
     historyList.appendChild(li);
   });
 }
 
-function updateDisplay(){
-  displayMain.textContent = currentExpr || '0';
-  displaySecondary.textContent = '';
+function addHistory(expr,result){
+
+  history.unshift({expr,result});
+
+  history = history.slice(0,20);
+
+  saveHistory();
+
+  renderHistory();
 }
 
-function showError(msg){
-  displayMain.classList.add('error');
-  displayMain.textContent = msg;
-  setTimeout(() => { displayMain.classList.remove('error'); updateDisplay(); }, 1100);
+function escapeHtml(str){
+
+  return String(str).replace(/[&<>"']/g,s=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[s]));
+}
+
+function append(v){
+
+  currentExpr += v;
+
+  updateDisplay(currentExpr,"");
 }
 
 function clearAll(){
-  currentExpr = '';
+
+  currentExpr = "";
   lastResult = null;
-  updateDisplay();
-  displaySecondary.textContent = 'クリアしました';
+
+  updateDisplay("0","");
+
+  setStatus("クリア");
+}
+
+function clearEntry(){
+
+  currentExpr = "";
+
+  updateDisplay(
+    lastResult !== null ? String(lastResult) : "0",
+    ""
+  );
+}
+
+function backspace(){
+
+  currentExpr = currentExpr.slice(0,-1);
+
+  updateDisplay(currentExpr || "0","");
+}
+
+function valid(expr){
+
+  if(!expr) return false;
+
+  expr = expr.replace(/\s+/g,"");
+
+  if(!/^[0-9+\-*/().]+$/.test(expr)){
+    return false;
+  }
+
+  if(/[+\-*/.(]$/.test(expr)){
+    return false;
+  }
+
+  if(/\d*\.\d*\./.test(expr)){
+    return false;
+  }
+
+  return true;
+}
+
+function safeEval(expr){
+
+  if(!valid(expr)){
+    throw new Error("invalid");
+  }
+
+  const result = Function(`
+    "use strict";
+    return (${expr});
+  `)();
+
+  if(!Number.isFinite(result)){
+    throw new Error("NaN");
+  }
+
+  return result;
+}
+
+function calculate(){
+
+  const expr = currentExpr.trim();
+
+  if(!expr){
+    return;
+  }
+
+  try{
+
+    const result = safeEval(expr);
+
+    lastResult = result;
+
+    currentExpr = String(result);
+
+    updateDisplay(
+      String(result),
+      expr + " ="
+    );
+
+    addHistory(expr,result);
+
+    setStatus("計算完了");
+
+    vibrate(35);
+
+  }catch(e){
+
+    console.error(e);
+
+    showError("計算エラー");
+
+    setStatus("式エラー");
+  }
+}
+
+function normalize(text){
+
+  return text
+    .toLowerCase()
+    .replace(/たす|足す|プラス/g,"+")
+    .replace(/ひく|引く|マイナス/g,"-")
+    .replace(/かける|掛ける/g,"*")
+    .replace(/わる|割る/g,"/")
+    .replace(/てん|点/g,".")
+    .replace(/税込/g,"*1.1")
+    .replace(/[^0-9+\-*/().]/g,"");
+}
+
+function handleVoice(text){
+
+  const n = normalize(text);
+
+  if(!n) return;
+
+  currentExpr += n;
+
+  updateDisplay(currentExpr,"音声: " + text);
+
+  calculate();
+}
+
+function stopListen(){
+
+  if(recognition){
+
+    try{
+      recognition.stop();
+    }catch(e){}
+  }
+
+  listening = false;
+
+  micBtn.classList.remove("listening");
+
+  mainDisplay.classList.remove("listening");
+
+  micText.textContent = "音声入力開始";
+
+  setStatus("停止");
+}
+
+function startListen(){
+
+  if(!recognition){
+
+    showError("非対応");
+
+    return;
+  }
+
+  try{
+
+    recognition.start();
+
+    vibrate(30);
+
+  }catch(e){
+
+    console.error(e);
+
+    showError("開始失敗");
+  }
 }
 
 function toggleListen(){
-  if (!recognition) return;
-  if (listening) stopListen(); else startListen();
-}
-function startListen(){
-  if (!recognition) return;
-  manualStop = false;
-  continuousMode = true;
-  try { recognition.start(); } catch(e){ showError('開始できません'); }
-}
-function stopListen(){
-  manualStop = true;
-  continuousMode = false;
-  try { recognition.stop(); } catch(e){}
+
+  if(listening){
+    stopListen();
+  }else{
+    startListen();
+  }
 }
 
-// ボタン操作
-document.querySelectorAll('.btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const action = btn.dataset.action;
-    const value = btn.dataset.value;
-    navigator.vibrate && navigator.vibrate(5);
-    
-    if (action === 'ac') clearAll();
-    else if (action === 'clear') { currentExpr = ''; updateDisplay(); }
-    else if (action === 'back') { currentExpr = currentExpr.slice(0,-1); updateDisplay(); }
-    else if (action === 'equals') calculate(currentExpr);
-    else if (value) {
-      if (currentExpr === '0' && /[0-9]/.test(value)) currentExpr = '';
-      currentExpr += value;
-      updateDisplay();
-    }
+function initSpeech(){
+
+  if(!SR){
+
+    micText.textContent = "音声非対応";
+
+    setStatus("通常電卓モード");
+
+    return;
+  }
+
+  recognition = new SR();
+
+  recognition.lang = "ja-JP";
+
+  recognition.interimResults = false;
+
+  recognition.continuous = false;
+
+  recognition.onstart = ()=>{
+
+    listening = true;
+
+    micBtn.classList.add("listening");
+
+    mainDisplay.classList.add("listening");
+
+    micText.textContent = "聞き取り中";
+
+    setStatus("音声入力中");
+  };
+
+  recognition.onend = ()=>{
+
+    listening = false;
+
+    micBtn.classList.remove("listening");
+
+    mainDisplay.classList.remove("listening");
+
+    micText.textContent = "音声入力開始";
+
+    setStatus("準備完了");
+  };
+
+  recognition.onerror = e=>{
+
+    console.error(e);
+
+    showError("音声エラー");
+
+    stopListen();
+  };
+
+  recognition.onresult = e=>{
+
+    const transcript =
+      e.results[0][0].transcript.trim();
+
+    handleVoice(transcript);
+  };
+}
+
+function initButtons(){
+
+  document.querySelectorAll(".btn").forEach(btn=>{
+
+    btn.onclick = ()=>{
+
+      const action = btn.dataset.action;
+      const value = btn.dataset.value;
+
+      if(action === "ac"){
+        clearAll();
+        return;
+      }
+
+      if(action === "clear"){
+        clearEntry();
+        return;
+      }
+
+      if(action === "back"){
+        backspace();
+        return;
+      }
+
+      if(action === "equals"){
+        calculate();
+        return;
+      }
+
+      if(value){
+        append(value);
+      }
+    };
   });
-});
 
-updateDisplay();
+  micBtn.onclick = toggleListen;
+}
+
+function registerSW(){
+
+  if(!("serviceWorker" in navigator)){
+    return;
+  }
+
+  const sw = `
+    self.addEventListener('install',e=>{
+      self.skipWaiting();
+    });
+
+    self.addEventListener('fetch',e=>{
+      e.respondWith(
+        caches.open('voicecalc-v1').then(cache=>{
+          return cache.match(e.request).then(res=>{
+            return res || fetch(e.request).then(net=>{
+              cache.put(e.request,net.clone());
+              return net;
+            }).catch(()=>res);
+          });
+        })
+      );
+    });
+  `;
+
+  const blob = new Blob([sw],{
+    type:"text/javascript"
+  });
+
+  const swURL = URL.createObjectURL(blob);
+
+  navigator.serviceWorker.register(swURL)
+  .then(()=>{
+    console.log("SW registered");
+  })
+  .catch(console.error);
+}
+
+function init(){
+
+  loadHistory();
+
+  initButtons();
+
+  initSpeech();
+
+  registerSW();
+
+  updateDisplay(
+    "0",
+    navigator.onLine
+      ? "オンライン"
+      : "オフライン"
+  );
+
+  setStatus(
+    navigator.onLine
+      ? "準備完了"
+      : "オフライン動作中"
+  );
+
+  window.addEventListener("offline",()=>{
+
+    setStatus("オフライン");
+
+    subDisplay.textContent =
+      "通常電卓モード";
+  });
+
+  window.addEventListener("online",()=>{
+
+    setStatus("オンライン復帰");
+
+    subDisplay.textContent =
+      "音声入力利用可能";
+  });
+
+  console.log("OFFLINE PRO READY");
+}
+
+init();
+
 })();
 </script>
+
 </body>
 </html>
