@@ -3,23 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-
-<title>音声電卓 OFFLINE PRO</title>
+<title>現場音声電卓 PRO</title>
 
 <meta name="theme-color" content="#0b1020">
 
-<!-- PWA -->
-<link rel="manifest" href="data:application/json,{
-  &quot;name&quot;:&quot;音声電卓 OFFLINE PRO&quot;,
-  &quot;short_name&quot;:&quot;音声電卓&quot;,
-  &quot;display&quot;:&quot;standalone&quot;,
-  &quot;background_color&quot;:&quot;#070b16&quot;,
-  &quot;theme_color&quot;:&quot;#0b1020&quot;,
-  &quot;start_url&quot;:&quot;.&quot;
-}">
-
 <style>
-
 *{
   box-sizing:border-box;
   -webkit-tap-highlight-color:transparent;
@@ -29,13 +17,12 @@ body{
   margin:0;
   font-family:-apple-system,BlinkMacSystemFont,"Yu Gothic UI",Meiryo,sans-serif;
   background:#070b16;
-  color:#e2e8f0;
+  color:#fff;
   min-height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
   padding:14px;
-  touch-action:manipulation;
 }
 
 body::before{
@@ -78,48 +65,48 @@ h1{
 .sub{
   margin-top:6px;
   text-align:center;
-  font-size:12px;
   color:#94a3b8;
+  font-size:12px;
 }
 
 .display{
   margin-top:16px;
-  background:rgba(0,0,0,.38);
+  background:rgba(0,0,0,.35);
   border-radius:20px;
   padding:18px;
-  border:1px solid rgba(148,163,184,.12);
+  border:1px solid rgba(148,163,184,.1);
   min-height:120px;
   display:flex;
   flex-direction:column;
   justify-content:flex-end;
 }
 
-.sub-display{
+.display-sub{
   text-align:right;
-  font-size:13px;
   color:#94a3b8;
+  font-size:13px;
   min-height:18px;
   word-break:break-all;
 }
 
-.main-display{
+.display-main{
   text-align:right;
-  font-size:44px;
-  line-height:1.15;
+  font-size:46px;
   font-weight:800;
-  word-break:break-all;
+  line-height:1.1;
   font-family:ui-monospace,monospace;
+  word-break:break-all;
 }
 
-.main-display.error{
-  color:#f87171;
-}
-
-.main-display.listening{
+.display-main.listening{
   color:#c4b5fd;
 }
 
-.mic-btn{
+.display-main.error{
+  color:#f87171;
+}
+
+.voice-btn{
   width:100%;
   margin-top:14px;
   border:none;
@@ -130,65 +117,32 @@ h1{
   font-size:16px;
   font-weight:700;
   cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
   transition:.15s;
 }
 
-.mic-btn:active{
+.voice-btn:active{
   transform:scale(.98);
 }
 
-.mic-btn.listening{
+.voice-btn.active{
   animation:pulse 1.8s infinite;
 }
 
 @keyframes pulse{
   0%{box-shadow:0 0 0 0 rgba(168,85,247,.55)}
-  70%{box-shadow:0 0 0 16px rgba(168,85,247,0)}
+  70%{box-shadow:0 0 0 18px rgba(168,85,247,0)}
   100%{box-shadow:0 0 0 0 rgba(168,85,247,0)}
 }
 
-.wave{
-  display:flex;
-  gap:3px;
-  align-items:flex-end;
-  height:18px;
-}
-
-.wave span{
-  width:3px;
-  height:4px;
-  background:#fff;
-  border-radius:2px;
-}
-
-.mic-btn.listening .wave span{
-  animation:wave 1s infinite ease-in-out;
-}
-
-.wave span:nth-child(2){animation-delay:.1s}
-.wave span:nth-child(3){animation-delay:.2s}
-.wave span:nth-child(4){animation-delay:.3s}
-.wave span:nth-child(5){animation-delay:.4s}
-
-@keyframes wave{
-  0%,100%{height:4px}
-  50%{height:17px}
-}
-
 .controls{
-  margin:12px 2px;
   display:flex;
   justify-content:space-between;
+  margin:12px 2px;
   font-size:12px;
-  color:#cbd5e1;
 }
 
 .status{
-  color:#64748b;
+  color:#94a3b8;
 }
 
 .buttons{
@@ -201,10 +155,10 @@ h1{
   border:none;
   border-radius:14px;
   padding:16px 0;
-  font-size:20px;
-  cursor:pointer;
   background:rgba(255,255,255,.05);
   color:#fff;
+  font-size:20px;
+  cursor:pointer;
   border:1px solid rgba(148,163,184,.1);
 }
 
@@ -243,8 +197,8 @@ h1{
 
 .history ul{
   list-style:none;
-  padding:0;
   margin:0;
+  padding:0;
   display:flex;
   flex-direction:column;
   gap:6px;
@@ -256,24 +210,24 @@ h1{
   padding:8px;
   display:flex;
   justify-content:space-between;
+  gap:8px;
+  cursor:pointer;
   font-size:12px;
   font-family:ui-monospace,monospace;
-  cursor:pointer;
 }
 
 .footer{
   margin-top:12px;
   text-align:center;
-  font-size:11px;
   color:#7c8ba1;
+  font-size:11px;
   line-height:1.5;
 }
 
-.offline{
+.ok{
   color:#22c55e;
   font-weight:700;
 }
-
 </style>
 </head>
 
@@ -283,33 +237,23 @@ h1{
 
 <div class="card">
 
-<h1>音声電卓 OFFLINE PRO</h1>
+<h1>現場音声電卓 PRO</h1>
 
 <div class="sub">
-オフライン対応・普通の電卓としても完全動作
+Android 自動復帰型・ハンズフリー待機
 </div>
 
 <div class="display">
-<div class="sub-display" id="subDisplay"></div>
-<div class="main-display" id="mainDisplay">0</div>
+<div class="display-sub" id="displaySub"></div>
+<div class="display-main" id="displayMain">0</div>
 </div>
 
-<button class="mic-btn" id="micBtn">
-
-<div class="wave">
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-</div>
-
-<span id="micText">音声入力開始</span>
-
+<button id="voiceBtn" class="voice-btn">
+🎤 ハンズフリー開始
 </button>
 
 <div class="controls">
-<div id="modeLabel">通常計算モード</div>
+<div id="modeLabel">自動復帰モード</div>
 <div class="status" id="status">準備完了</div>
 </div>
 
@@ -347,7 +291,7 @@ h1{
 <div class="history">
 
 <h3>
-履歴 <span class="offline">● OFFLINE</span>
+履歴 <span class="ok">● AUTO RECOVERY</span>
 </h3>
 
 <ul id="historyList"></ul>
@@ -355,8 +299,8 @@ h1{
 </div>
 
 <div class="footer">
-オフライン時も通常電卓として利用可能<br>
-音声認識はオンライン時のみ
+「3たす5」「たす2」「1000円税込」<br>
+「停止」で音声待機終了
 </div>
 
 </div>
@@ -369,14 +313,18 @@ h1{
 
 const $ = id => document.getElementById(id);
 
-const mainDisplay = $("mainDisplay");
-const subDisplay = $("subDisplay");
-const micBtn = $("micBtn");
-const micText = $("micText");
+const displayMain = $("displayMain");
+const displaySub = $("displaySub");
+const voiceBtn = $("voiceBtn");
 const statusEl = $("status");
 const historyList = $("historyList");
 
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SR =
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
+
+const isAndroid =
+  /Android/i.test(navigator.userAgent);
 
 let recognition = null;
 
@@ -384,9 +332,18 @@ let currentExpr = "";
 let lastResult = null;
 let history = [];
 
+let keepAlive = false;
 let listening = false;
+let startLock = false;
+let restartTimer = null;
+
+let lastStartTime = 0;
+let restartCount = 0;
+
+const RESTART_DELAY = 1200;
 
 function vibrate(ms=25){
+
   try{
     navigator.vibrate?.(ms);
   }catch(e){}
@@ -397,29 +354,47 @@ function setStatus(text){
 }
 
 function updateDisplay(main,sub=""){
-  mainDisplay.textContent = main || "0";
-  subDisplay.textContent = sub;
-  mainDisplay.classList.remove("error");
+
+  displayMain.textContent = main || "0";
+  displaySub.textContent = sub;
+
+  displayMain.classList.remove("error");
 }
 
-function showError(msg){
+function showError(text){
 
-  const old = mainDisplay.textContent;
+  const old = displayMain.textContent;
 
-  mainDisplay.textContent = msg;
-  mainDisplay.classList.add("error");
+  displayMain.textContent = text;
+
+  displayMain.classList.add("error");
 
   vibrate([60,40,60]);
 
   setTimeout(()=>{
-    mainDisplay.classList.remove("error");
-    mainDisplay.textContent = old;
-  },1400);
+
+    displayMain.classList.remove("error");
+
+    displayMain.textContent = old;
+
+  },1500);
+}
+
+function escapeHtml(str){
+
+  return String(str).replace(/[&<>"']/g,s=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[s]));
 }
 
 function saveHistory(){
+
   localStorage.setItem(
-    "offlineVoiceCalcHistory",
+    "genbaVoiceCalcHistory",
     JSON.stringify(history)
   );
 }
@@ -429,7 +404,9 @@ function loadHistory(){
   try{
 
     const h = JSON.parse(
-      localStorage.getItem("offlineVoiceCalcHistory") || "[]"
+      localStorage.getItem(
+        "genbaVoiceCalcHistory"
+      ) || "[]"
     );
 
     if(Array.isArray(h)){
@@ -437,6 +414,7 @@ function loadHistory(){
     }
 
   }catch(e){
+
     history = [];
   }
 
@@ -459,6 +437,7 @@ function renderHistory(){
     li.onclick = ()=>{
 
       currentExpr = String(item.result);
+
       lastResult = item.result;
 
       updateDisplay(
@@ -482,27 +461,17 @@ function addHistory(expr,result){
   renderHistory();
 }
 
-function escapeHtml(str){
-
-  return String(str).replace(/[&<>"']/g,s=>({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#39;"
-  }[s]));
-}
-
 function append(v){
 
   currentExpr += v;
 
-  updateDisplay(currentExpr,"");
+  updateDisplay(currentExpr);
 }
 
 function clearAll(){
 
   currentExpr = "";
+
   lastResult = null;
 
   updateDisplay("0","");
@@ -515,16 +484,18 @@ function clearEntry(){
   currentExpr = "";
 
   updateDisplay(
-    lastResult !== null ? String(lastResult) : "0",
-    ""
+    lastResult !== null
+      ? String(lastResult)
+      : "0"
   );
 }
 
 function backspace(){
 
-  currentExpr = currentExpr.slice(0,-1);
+  currentExpr =
+    currentExpr.slice(0,-1);
 
-  updateDisplay(currentExpr || "0","");
+  updateDisplay(currentExpr || "0");
 }
 
 function valid(expr){
@@ -589,9 +560,11 @@ function calculate(){
 
     addHistory(expr,result);
 
+    vibrate(35);
+
     setStatus("計算完了");
 
-    vibrate(35);
+    speakResult(result);
 
   }catch(e){
 
@@ -603,10 +576,39 @@ function calculate(){
   }
 }
 
+function speakResult(result){
+
+  if(!window.speechSynthesis){
+    return;
+  }
+
+  try{
+
+    speechSynthesis.cancel();
+
+    const uttr =
+      new SpeechSynthesisUtterance(
+        "答え " + result
+      );
+
+    uttr.lang = "ja-JP";
+
+    speechSynthesis.speak(uttr);
+
+  }catch(e){}
+}
+
 function normalize(text){
 
-  return text
-    .toLowerCase()
+  let s =
+    text.toLowerCase();
+
+  if(/停止|ストップ|終了/.test(s)){
+    stopHandsFree();
+    return "";
+  }
+
+  s = s
     .replace(/たす|足す|プラス/g,"+")
     .replace(/ひく|引く|マイナス/g,"-")
     .replace(/かける|掛ける/g,"*")
@@ -614,80 +616,162 @@ function normalize(text){
     .replace(/てん|点/g,".")
     .replace(/税込/g,"*1.1")
     .replace(/[^0-9+\-*/().]/g,"");
+
+  return s;
 }
 
 function handleVoice(text){
 
   const n = normalize(text);
 
-  if(!n) return;
+  if(!n){
+    return;
+  }
 
-  currentExpr += n;
+  if(
+    /^[+\-*/]/.test(n) &&
+    currentExpr === "" &&
+    lastResult !== null
+  ){
 
-  updateDisplay(currentExpr,"音声: " + text);
+    currentExpr =
+      String(lastResult) + n;
+
+  }else{
+
+    currentExpr += n;
+  }
+
+  updateDisplay(
+    currentExpr,
+    "音声: " + text
+  );
 
   calculate();
 }
 
-function stopListen(){
-
-  if(recognition){
-
-    try{
-      recognition.stop();
-    }catch(e){}
-  }
-
-  listening = false;
-
-  micBtn.classList.remove("listening");
-
-  mainDisplay.classList.remove("listening");
-
-  micText.textContent = "音声入力開始";
-
-  setStatus("停止");
-}
-
-function startListen(){
-
-  if(!recognition){
-
-    showError("非対応");
-
-    return;
-  }
+async function warmupMic(){
 
   try{
 
-    recognition.start();
+    const stream =
+      await navigator.mediaDevices
+      .getUserMedia({
+        audio:true
+      });
 
-    vibrate(30);
+    stream
+      .getTracks()
+      .forEach(t=>t.stop());
+
+    console.log("mic ready");
 
   }catch(e){
 
     console.error(e);
 
-    showError("開始失敗");
+    showError("マイクNG");
   }
 }
 
-function toggleListen(){
+function startRecognition(){
 
-  if(listening){
-    stopListen();
-  }else{
-    startListen();
+  if(
+    !recognition ||
+    startLock
+  ){
+    return;
   }
+
+  const now = Date.now();
+
+  if(now - lastStartTime < 1000){
+    return;
+  }
+
+  startLock = true;
+
+  lastStartTime = now;
+
+  try{
+
+    recognition.start();
+
+  }catch(e){
+
+    console.error(e);
+
+  }
+
+  setTimeout(()=>{
+
+    startLock = false;
+
+  },1200);
+}
+
+async function beginHandsFree(){
+
+  if(keepAlive){
+
+    stopHandsFree();
+
+    return;
+  }
+
+  await warmupMic();
+
+  keepAlive = true;
+
+  restartCount = 0;
+
+  voiceBtn.classList.add("active");
+
+  voiceBtn.textContent =
+    "🛑 ハンズフリー停止";
+
+  setStatus("待機中");
+
+  startRecognition();
+
+  vibrate(30);
+}
+
+function stopHandsFree(){
+
+  keepAlive = false;
+
+  listening = false;
+
+  clearTimeout(restartTimer);
+
+  voiceBtn.classList.remove("active");
+
+  voiceBtn.textContent =
+    "🎤 ハンズフリー開始";
+
+  displayMain.classList.remove("listening");
+
+  try{
+
+    recognition?.stop();
+
+  }catch(e){}
+
+  setStatus("停止");
+
+  vibrate(20);
 }
 
 function initSpeech(){
 
   if(!SR){
 
-    micText.textContent = "音声非対応";
+    showError("音声非対応");
 
-    setStatus("通常電卓モード");
+    setStatus("通常電卓");
+
+    voiceBtn.disabled = true;
 
     return;
   }
@@ -696,128 +780,181 @@ function initSpeech(){
 
   recognition.lang = "ja-JP";
 
+  recognition.continuous = false;
+
   recognition.interimResults = false;
 
-  recognition.continuous = false;
+  recognition.maxAlternatives = 1;
 
   recognition.onstart = ()=>{
 
     listening = true;
 
-    micBtn.classList.add("listening");
+    displayMain.classList.add("listening");
 
-    mainDisplay.classList.add("listening");
+    setStatus("聞き取り中");
+  };
 
-    micText.textContent = "聞き取り中";
+  recognition.onaudiostart =
+    ()=>console.log("audio");
 
-    setStatus("音声入力中");
+  recognition.onspeechstart =
+    ()=>console.log("speech");
+
+  recognition.onsoundstart =
+    ()=>console.log("sound");
+
+  recognition.onresult = e=>{
+
+    const text =
+      e.results[0][0]
+      .transcript
+      .trim();
+
+    console.log("voice",text);
+
+    handleVoice(text);
+  };
+
+  recognition.onerror = e=>{
+
+    console.log(
+      "speech error",
+      e.error
+    );
+
+    switch(e.error){
+
+      case "no-speech":
+      case "aborted":
+
+        return;
+
+      case "audio-capture":
+
+        setStatus("マイク不可");
+
+        break;
+
+      case "not-allowed":
+
+        setStatus("権限NG");
+
+        keepAlive = false;
+
+        stopHandsFree();
+
+        break;
+
+      case "network":
+
+        setStatus("通信エラー");
+
+        break;
+
+      default:
+
+        setStatus(
+          "音声エラー"
+        );
+    }
   };
 
   recognition.onend = ()=>{
 
     listening = false;
 
-    micBtn.classList.remove("listening");
+    displayMain.classList.remove(
+      "listening"
+    );
 
-    mainDisplay.classList.remove("listening");
+    console.log(
+      "onend restart",
+      keepAlive
+    );
 
-    micText.textContent = "音声入力開始";
+    if(!keepAlive){
+      return;
+    }
 
-    setStatus("準備完了");
-  };
+    restartCount++;
 
-  recognition.onerror = e=>{
+    restartTimer = setTimeout(()=>{
 
-    console.error(e);
+      if(keepAlive){
 
-    showError("音声エラー");
+        startRecognition();
 
-    stopListen();
-  };
+      }
 
-  recognition.onresult = e=>{
-
-    const transcript =
-      e.results[0][0].transcript.trim();
-
-    handleVoice(transcript);
+    },RESTART_DELAY);
   };
 }
 
 function initButtons(){
 
-  document.querySelectorAll(".btn").forEach(btn=>{
+  document
+    .querySelectorAll(".btn")
+    .forEach(btn=>{
 
-    btn.onclick = ()=>{
+      btn.onclick = ()=>{
 
-      const action = btn.dataset.action;
-      const value = btn.dataset.value;
+        const action =
+          btn.dataset.action;
 
-      if(action === "ac"){
-        clearAll();
-        return;
-      }
+        const value =
+          btn.dataset.value;
 
-      if(action === "clear"){
-        clearEntry();
-        return;
-      }
+        if(action === "ac"){
+          clearAll();
+          return;
+        }
 
-      if(action === "back"){
-        backspace();
-        return;
-      }
+        if(action === "clear"){
+          clearEntry();
+          return;
+        }
 
-      if(action === "equals"){
-        calculate();
-        return;
-      }
+        if(action === "back"){
+          backspace();
+          return;
+        }
 
-      if(value){
-        append(value);
-      }
-    };
-  });
+        if(action === "equals"){
+          calculate();
+          return;
+        }
 
-  micBtn.onclick = toggleListen;
+        if(value){
+          append(value);
+        }
+      };
+    });
+
+  voiceBtn.onclick =
+    beginHandsFree;
 }
 
-function registerSW(){
+function initVisibilityFix(){
 
-  if(!("serviceWorker" in navigator)){
-    return;
-  }
+  document.addEventListener(
+    "visibilitychange",
+    ()=>{
 
-  const sw = `
-    self.addEventListener('install',e=>{
-      self.skipWaiting();
-    });
+      if(
+        !document.hidden &&
+        keepAlive &&
+        !listening
+      ){
 
-    self.addEventListener('fetch',e=>{
-      e.respondWith(
-        caches.open('voicecalc-v1').then(cache=>{
-          return cache.match(e.request).then(res=>{
-            return res || fetch(e.request).then(net=>{
-              cache.put(e.request,net.clone());
-              return net;
-            }).catch(()=>res);
-          });
-        })
-      );
-    });
-  `;
+        setTimeout(()=>{
 
-  const blob = new Blob([sw],{
-    type:"text/javascript"
-  });
+          startRecognition();
 
-  const swURL = URL.createObjectURL(blob);
-
-  navigator.serviceWorker.register(swURL)
-  .then(()=>{
-    console.log("SW registered");
-  })
-  .catch(console.error);
+        },1500);
+      }
+    }
+  );
 }
 
 function init(){
@@ -828,7 +965,7 @@ function init(){
 
   initSpeech();
 
-  registerSW();
+  initVisibilityFix();
 
   updateDisplay(
     "0",
@@ -840,26 +977,12 @@ function init(){
   setStatus(
     navigator.onLine
       ? "準備完了"
-      : "オフライン動作中"
+      : "オフライン"
   );
 
-  window.addEventListener("offline",()=>{
-
-    setStatus("オフライン");
-
-    subDisplay.textContent =
-      "通常電卓モード";
-  });
-
-  window.addEventListener("online",()=>{
-
-    setStatus("オンライン復帰");
-
-    subDisplay.textContent =
-      "音声入力利用可能";
-  });
-
-  console.log("OFFLINE PRO READY");
+  console.log(
+    "GENBA VOICE CALC READY"
+  );
 }
 
 init();
